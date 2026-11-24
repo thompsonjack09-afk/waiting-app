@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Waiting">
+<meta name="theme-color" content="#14110e">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Waiting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f3ece1; --muted:#b9ad9c; --faint:#857a6b;
+    --bg:#14110e; --panel:#1d1915; --line:#3a332b; --ochre:#d39a4a;
+    --serif:'Cormorant Garamond', Georgia, serif;
+    --sans:'Inter', -apple-system, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  a{color:inherit}
+
+  /* Top bar */
+  .top{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;font-size:12px;color:var(--ink);pointer-events:none;transition:background .3s}
+  .top.solid{background:linear-gradient(180deg,rgba(20,17,14,.96) 60%,rgba(20,17,14,0))}
+  .top button,.top a{pointer-events:auto}
+  .topL{display:flex;align-items:center;gap:10px;min-width:0}
+  .back{width:34px;height:34px;border-radius:50%;border:1px solid rgba(243,236,225,.35);display:grid;place-items:center;background:rgba(20,17,14,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);text-decoration:none}
+  .back svg{width:16px;height:16px}
+  .brand{font-family:var(--serif);font-size:17px;letter-spacing:.02em}
+  .topR{display:flex;align-items:center;gap:12px}
+  .steps{display:flex;gap:4px}
+  .steps i{width:10px;height:3px;border-radius:2px;background:rgba(243,236,225,.28);transition:background .3s}
+  .steps i.on{background:var(--ink)}
+  .sound{width:34px;height:34px;border-radius:50%;border:1px solid rgba(243,236,225,.35);display:grid;place-items:center;background:rgba(20,17,14,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .sound svg{width:17px;height:17px}
+  .sound .on{display:none}.sound.playing .on{display:block}.sound.playing .off{display:none}
+
+  /* Home */
+  .home{height:100svh;overflow-y:auto;padding:calc(64px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))}
+  .home h1{font-family:var(--serif);font-weight:600;font-size:46px;line-height:1;margin:8px 0 6px}
+  .home .sub{color:var(--muted);font-size:15px;line-height:1.5;margin-bottom:18px}
+  .surprise{width:100%;padding:15px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:500;font-size:15px;margin-bottom:8px}
+  .grp{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);margin:30px 0 10px}
+  .item{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);text-decoration:none}
+  .thumb{flex:0 0 58px;height:58px;border-radius:10px;background:var(--panel) center/cover no-repeat;border:1px solid var(--line)}
+  .item .t{font-family:var(--serif);font-weight:600;font-size:21px;line-height:1.1}
+  .item .w{font-size:13px;color:var(--muted);margin-top:2px}
+  .item .dot{margin-left:auto;flex:0 0 auto;font-size:11px;color:var(--ochre)}
+  .count{font-size:13px;color:var(--faint);margin-top:28px;text-align:center}
+
+  /* Card feed */
+  .feed{height:100svh;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+  .feed::-webkit-scrollbar,.home::-webkit-scrollbar{display:none}
+  .screen{position:relative;min-height:100svh;scroll-snap-align:start;scroll-snap-stop:always}
+
+  .art{height:100svh;overflow:hidden;background:#1d1611}
+  .painting{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;display:block}
+  .art .ph{position:absolute;inset:0;background:radial-gradient(120% 80% at 70% 30%,#7a4a24 0%,#2b1c12 55%,#14110e 100%)}
+  .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,17,14,.4) 0%,rgba(20,17,14,0) 22%,rgba(20,17,14,0) 46%,rgba(20,17,14,.94) 88%)}
+  .art-text{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 26px calc(26px + env(safe-area-inset-bottom))}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);margin-bottom:10px}
+  .art h1{font-family:var(--serif);font-weight:600;font-size:54px;line-height:.95;letter-spacing:-.01em}
+  .caption{margin-top:12px;font-size:12px;color:var(--muted);line-height:1.45}
+  .hint{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:24px;font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .hint .chev{width:22px;height:22px;animation:nudge 2s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(-6px);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.hint .chev{animation:none}}
+
+  .text{padding:calc(70px + env(safe-area-inset-top)) 26px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column}
+  .text .body{flex:1}
+  .label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  .deeper-label{color:var(--ochre)}
+  h2{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.05}
+  .dates{font-size:13px;color:var(--muted);margin-top:4px}
+  .idea{font-family:var(--serif);font-size:24px;line-height:1.28;margin:20px 0 16px;font-style:italic}
+  p{font-size:15.5px;line-height:1.62;color:#ddd3c4;margin-bottom:13px}
+  h3{font-family:var(--serif);font-weight:600;font-size:30px;line-height:1.05}
+  .work{font-size:13px;color:var(--ochre);margin:4px 0 18px}
+  .quote{font-family:var(--serif);font-size:25px;line-height:1.3;margin:0 0 18px;padding-left:16px;border-left:2px solid var(--ochre)}
+  .revolt{margin-top:6px;padding-top:16px;border-top:1px solid var(--line)}
+  .revolt .label{color:var(--ochre)}
+
+  .earlier{border-left:2px solid var(--ochre);padding:4px 0 4px 14px;margin-bottom:22px}
+  .earlier .label{margin-bottom:6px}
+  .earlier p{margin:0;font-size:15px;color:var(--muted);font-style:italic}
+  .prompt{font-family:var(--serif);font-size:30px;line-height:1.15;margin-bottom:18px}
+  textarea{width:100%;min-height:130px;resize:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px;font:16px/1.5 var(--sans)}
+  textarea:focus{outline:none;border-color:var(--ochre)}
+  .err{font-size:13px;color:#e8877a;margin-top:8px;min-height:18px}
+  .row{display:flex;gap:10px;margin-top:6px}
+  .primary{flex:1;padding:15px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:500;font-size:15px}
+  .ghost{padding:15px 16px;border-radius:14px;border:1px solid var(--line);font-size:15px;color:var(--muted)}
+  .skip{display:block;margin:16px auto 0;font-size:14px;color:var(--faint);text-decoration:underline;text-underline-offset:3px}
+  .done{display:none}
+  .done.show{display:block;animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .done .ok{font-family:var(--serif);font-size:26px;margin-bottom:6px}
+
+  .essay h4{font-family:var(--serif);font-weight:600;font-size:22px;margin:22px 0 8px}
+  .scripture{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--ink);margin:6px 0 18px}
+  .scripture sup{font-family:var(--sans);font-size:10px;color:var(--faint);margin-right:4px}
+  .src{font-size:13px;color:var(--faint);margin-bottom:18px}
+  .card-sm{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  .card-sm .who{font-family:var(--serif);font-weight:600;font-size:22px}
+  .card-sm .what{font-size:12px;color:var(--ochre);margin:2px 0 8px;letter-spacing:.06em}
+  .card-sm p{margin:0;font-size:15px}
+  .poll{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .opt{text-align:left;padding:14px 16px;border:1px solid var(--line);border-radius:14px;font-size:15px;text-decoration:none;display:block}
+  .opt.picked{border-color:var(--ochre);background:rgba(211,154,74,.12)}
+  .opt small{display:block;color:var(--faint);font-size:12px;margin-top:2px}
+  .pollnote{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px}
+  .next-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .next-item:last-child{border-bottom:0}
+  .next-item .time{flex:0 0 72px;font-size:12px;color:var(--ochre);padding-top:3px}
+  .next-item .ttl{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.2}
+  .next-item p{margin:4px 0 0;font-size:14px}
+  .bignext .opt{font-family:var(--serif);font-size:23px}
+  .homelink{display:block;text-align:center;margin-top:22px;font-size:14px;color:var(--faint);text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+
+<div class="top" id="top">
+  <span class="topL" id="topL"><span class="brand">Waiting</span></span>
+  <span class="topR"><span class="steps" id="steps"></span>
+    <button class="sound" id="sound" aria-label="Play music" aria-pressed="false">
+      <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>
+      <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    </button>
+  </span>
+</div>
+
+<main id="view"></main>
+
+<template id="absurd-deep">  <section class="screen text">
+    <div class="body essay">
+      <div class="label deeper-label">Go deeper · 1 of 5 · about 4 minutes</div>
+      <h2>The longer read</h2>
+      <h4>Where it came from</h4>
+      <p>Camus grew up poor in Algiers, raised by a mother who was nearly deaf and could barely read. He knew sunlight, the sea and football long before he knew philosophy, and he never trusted any idea that asked him to give up the world for something beyond it.</p>
+      <p>He wrote <em>The Myth of Sisyphus</em> in 1940 and 1941, as France fell to Germany, and it was published in occupied Paris in 1942, the same year as his novel <em>The Stranger</em>. The question of whether a life could still be worth living was not abstract to anyone reading it.</p>
+      <h4>The argument</h4>
+      <p>He opens with what he calls the one truly serious philosophical problem: whether life is worth living at all. Everything else, he says, comes after.</p>
+      <p>The absurd is not in the world, and not in us, but in the confrontation between the two. Once you have seen it, he argues, there are three ways to respond. You can end your life, which settles the confrontation by giving in to it. You can take a leap of faith toward a meaning beyond this world, which he calls <em>philosophical suicide</em>, because it gives up on clear sight. Or you can stay inside the contradiction, eyes open, and keep living.</p>
+      <p>That third way is revolt. It brings with it a strange freedom, since nothing is owed and nothing is promised, and a passion to live as fully and as much as possible.</p>
+      <h4>What changed</h4>
+      <p>In <em>The Rebel</em> (1951) Camus carried revolt from the single person to the community: my refusal of injustice becomes something we share. The book cost him his friendship with Sartre, who thought it naive about revolution. Camus won the Nobel Prize in 1957 and died in a car accident in 1960, aged 46, with an unfinished novel about his childhood in his briefcase.</p>
+    </div>
+    <div class="hint"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>The original words</div>
+  </section>
+
+  <section class="screen text">
+    <div class="body">
+      <div class="label deeper-label">Go deeper · 2 of 5</div>
+      <h2>The original words</h2>
+      <p>Hemingway took his title from the opening of Ecclesiastes, written more than two thousand years ago. It is the same cry Camus heard: labour, repetition, and a world that does not answer.</p>
+      <div class="scripture">
+        <sup>2</sup>Vanity of vanities, saith the Preacher, vanity of vanities; all is vanity.<br>
+        <sup>3</sup>What profit hath a man of all his labour which he taketh under the sun?<br>
+        <sup>4</sup>One generation passeth away, and another generation cometh: but the earth abideth for ever.<br>
+        <sup>5</sup>The sun also ariseth, and the sun goeth down, and hasteth to his place where he arose.<br>
+        <sup>7</sup>All the rivers run into the sea; yet the sea is not full; unto the place from whence the rivers come, thither they return again.<br>
+        <sup>9</sup>The thing that hath been, it is that which shall be; and that which is done is that which shall be done: and there is no new thing under the sun.
+      </div>
+      <div class="src">Ecclesiastes 1, King James Version (1611)</div>
+      <p>For Camus in his own words, read the final chapter of <em>The Myth of Sisyphus</em>, called "The Myth of Sisyphus". It is about eight pages, and it is where the line about imagining Sisyphus happy comes from.</p>
+    </div>
+    <div class="hint"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>The best objection</div>
+  </section>
+
+  <section class="screen text">
+    <div class="body">
+      <div class="label deeper-label">Go deeper · 3 of 5</div>
+      <h2>The best objection</h2>
+      <div class="card-sm">
+        <div class="who">Kierkegaard</div>
+        <div class="what">THE LEAP IS NOT A RETREAT</div>
+        <p>Camus calls faith philosophical suicide. Kierkegaard, writing a century earlier, would answer that refusing the leap is its own kind of despair: a self that insists on standing alone, proud of carrying a rock it was never meant to carry alone.</p>
+      </div>
+      <div class="card-sm">
+        <div class="who">Thomas Nagel</div>
+        <div class="what">"THE ABSURD", 1971</div>
+        <p>The absurd is not a cosmic injustice, Nagel argues. It comes from our ability to step back and see our own lives from outside. So defiance makes too much of it. The fitting response is irony, taking our lives seriously while knowing we could doubt them.</p>
+      </div>
+      <div class="label" style="margin-top:20px">Who's closest to right?</div>
+      <div class="poll" data-key="side">
+        <button class="opt" data-v="camus">Camus<small>Live in revolt, without appeal</small></button>
+        <button class="opt" data-v="kierkegaard">Kierkegaard<small>Take the leap</small></button>
+        <button class="opt" data-v="nagel">Nagel<small>Hold it lightly, with irony</small></button>
+      </div>
+      <div class="pollnote"></div>
+    </div>
+    <div class="hint"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>More places it shows up</div>
+  </section>
+
+  <section class="screen text">
+    <div class="body">
+      <div class="label deeper-label">Go deeper · 4 of 5</div>
+      <h2>More places it shows up</h2>
+      <div class="card-sm">
+        <div class="what">FILM</div>
+        <div class="who">Groundhog Day, 1993</div>
+        <p>A man relives the same day endlessly. Only when he stops trying to escape and learns to live inside the repetition does anything change.</p>
+      </div>
+      <div class="card-sm">
+        <div class="what">NOVEL</div>
+        <div class="who">Camus, The Stranger, 1942</div>
+        <p>Meursault, awaiting execution, finally opens himself to the quiet indifference of the world, and finds a kind of peace in it.</p>
+      </div>
+      <div class="card-sm">
+        <div class="what">PAINTING</div>
+        <div class="who">Edward Hopper, Nighthawks, 1942</div>
+        <p>Painted the same year <em>Sisyphus</em> was published: four people in a lit diner at night, close together and entirely alone.</p>
+      </div>
+      <div class="card-sm">
+        <div class="what">SONG</div>
+        <div class="who">Peggy Lee, "Is That All There Is?", 1969</div>
+        <p>A woman recalls life's great moments, each one less than promised, and decides the answer is to keep dancing anyway.</p>
+      </div>
+    </div>
+    <div class="hint"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>Where to go next</div>
+  </section>
+
+  <section class="screen text">
+    <div class="body">
+      <div class="label deeper-label">Go deeper · 5 of 5</div>
+      <h2>Where to go next</h2>
+      <div class="next-item"><div class="time">10 min</div><div><div class="ttl">The final chapter of <em>The Myth of Sisyphus</em></div><p>The heart of the idea, in Camus's own voice.</p></div></div>
+      <div class="next-item"><div class="time">20 min</div><div><div class="ttl">Thomas Nagel, "The Absurd"</div><p>A short, clear essay that takes Camus seriously and argues with him.</p></div></div>
+      <div class="next-item"><div class="time">2 hours</div><div><div class="ttl"><em>Groundhog Day</em></div><p>The lightest way into the whole idea.</p></div></div>
+      <div class="next-item"><div class="time">3 hours</div><div><div class="ttl">Camus, <em>The Stranger</em></div><p>The novel he wrote alongside <em>Sisyphus</em>.</p></div></div>
+      <div class="next-item"><div class="time">A week</div><div><div class="ttl">Sarah Bakewell, <em>At the Existentialist Caf&eacute;</em></div><p>Camus, Sartre, de Beauvoir and Heidegger as people, arguing over drinks.</p></div></div>
+    </div>
+    <div class="hint"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>Where next</div>
+  </section>
+
+</template>
+
+<script>
+window.CARDS = window.CARDS || [];
+window.CARDS.push(
+{
+  id: "control", group: "Living well", concept: "Dichotomy of control",
+  art: { title: "The Wheel of Fortune", artist: "Codex Buranus", year: "c. 1230", kind: "suggested", q: "Wheel of Fortune Carmina Burana" },
+  thinker: "Epictetus", dates: "c. 50–135 CE · Greek Stoic philosopher, born a slave",
+  idea: "Some things are up to us, and most things are not. Peace begins at that line.",
+  body: [
+    "Epictetus was born a slave in the Roman Empire, and a story told about him says his master once twisted his leg until it broke. He taught that the first task of a life is to sort the world into two piles: what is up to us, which is our judgements, our intentions and the way we respond, and everything else: the body, reputation, other people, the weather of events.",
+    "Most suffering, he argued, comes from treating the second pile as if it were the first. We rage at delays, at age, at other people's opinions, as though our will could reach them. Freedom is not getting what you want; it is wanting only what is yours to give. Marcus Aurelius, an emperor, kept the same teaching alive in a private notebook written on campaign."
+  ],
+  writer: "Rudyard Kipling", work: "“If—”", year: "1910",
+  quote: "If you can meet with Triumph and Disaster / And treat those two impostors just the same",
+  pairing: ["A father's advice to his son, written as a list of conditions. Nearly every line asks for steadiness toward what can't be controlled: lies told about you, losses, other people's doubt. What stays in your hands is the way you meet them."],
+  prompt: "What did you worry about this week that was never really yours to control?",
+  placeholder: "Someone's opinion, a delay, a result, the weather…",
+  objection: { who: "Aristotle", what: "A GOOD LIFE NEEDS SOME LUCK", text: "Aristotle thought a good life depends partly on things outside us: friends, health, a city not at war. To say only your own judgements matter, he might answer, is to pretend you don't need anything you could lose." },
+  next: [["10 min", "Epictetus, Enchiridion, chapter 1", "The whole teaching in its opening paragraphs."], ["1 hour", "Marcus Aurelius, Meditations, Book 2", "An emperor talking himself into patience."], ["A few weeks", "Donald Robertson, How to Think Like a Roman Emperor", "Stoicism as a working method for modern life."]],
+  related: ["amor-fati", "tranquillity"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "examined-life", group: "Living well", concept: "The examined life",
+  art: { title: "The Death of Socrates", artist: "Jacques-Louis David", year: "1787", kind: "traditional", q: "David The Death of Socrates 1787" },
+  thinker: "Socrates", dates: "c. 470–399 BCE · Athenian philosopher",
+  idea: "A life you never question is a life you never chose.",
+  body: [
+    "Socrates wrote nothing. We know him through Plato, who shows him in the marketplace of Athens asking simple questions, such as what courage is, or justice, until the confident men answering discovered they did not know. He claimed only one kind of wisdom: knowing that he didn't know.",
+    "In 399 BCE Athens put him on trial for impiety and corrupting the young. In his defence he refused to promise silence: the unexamined life, he told the jury, is not worth living. They sentenced him to death, and he drank the hemlock calmly, still talking with his friends about whether the soul survives."
+  ],
+  writer: "Leo Tolstoy", work: "The Death of Ivan Ilyich", year: "1886", quote: null,
+  pairing: ["Ivan Ilyich has lived exactly as he was expected to: the right career, the right house, the right curtains. Only as he lies dying does he ask whether any of it was right, and the question terrifies him, because he has never asked it before."],
+  prompt: "What's something you do every day that you've never asked yourself why?",
+  placeholder: "A routine, a belief, a habit, a goal…",
+  objection: { who: "David Hume", what: "SOME THINGS WORK BETTER UNEXAMINED", text: "Hume found that philosophy pushed far enough led him into gloom, and that dinner, backgammon and friends cured it. Examination has limits, he suggests: much of what makes a life worth living works best when you stop interrogating it." },
+  next: [["1 hour", "Plato, Apology", "Socrates's own defence speech, short and vivid."], ["2 hours", "Tolstoy, The Death of Ivan Ilyich", "A novella that does the examining for you."], ["A weekend", "Plato, Euthyphro, Crito and Phaedo", "The trial and death of Socrates, start to finish."]],
+  related: ["que-sais-je", "radical-doubt"],
+  sound: { root: 130.81, mode: "aeolian", beat: 0.52, pattern: 1 }
+},
+{
+  id: "flourishing", group: "Living well", concept: "Flourishing",
+  art: { title: "The School of Athens", artist: "Raphael", year: "1509–11", kind: "traditional", q: "Raphael School of Athens" },
+  thinker: "Aristotle", dates: "384–322 BCE · Greek philosopher, student of Plato",
+  idea: "You don't decide to be good once. You become it, a little each day.",
+  body: [
+    "Aristotle asked what everything we do is ultimately for, and answered eudaimonia. It is usually translated as happiness, but it means something closer to flourishing: a whole life going well, not a passing mood. He thought it could only be judged across a lifetime.",
+    "Virtue, for him, is built by practice. We become brave by doing brave things, and just by doing just things, until they stop costing us effort. Each virtue sits between two failures, courage between cowardice and recklessness, generosity between meanness and waste, and finding that middle takes practised judgement, not rules."
+  ],
+  writer: "George Eliot", work: "Middlemarch", year: "1871–72",
+  quote: "the growing good of the world is partly dependent on unhistoric acts",
+  pairing: ["Dorothea Brooke, the doctor Lydgate and Fred Vincy are each shaped less by grand decisions than by small daily choices that harden into character. Eliot ends by honouring lives of unremarkable goodness, whose effect on the world is real but never recorded."],
+  prompt: "What's a small thing you do often that's quietly shaping who you are?",
+  placeholder: "A morning habit, how you speak to people, what you read…",
+  objection: { who: "Immanuel Kant", what: "GOODNESS ISN'T A HABIT", text: "For Kant, an act done from habit or inclination has no special moral worth. What matters is acting from duty, because it is right. A person trained into kindness is pleasant, he might say, but not yet good." },
+  next: [["30 min", "Aristotle, Nicomachean Ethics, Book II", "How virtue is built by repetition."], ["A few weeks", "George Eliot, Middlemarch", "The great novel of ordinary character."], ["1 hour", "Edith Hall, Aristotle's Way, chapter 1", "Aristotle's ethics for everyday life."]],
+  related: ["greatest-happiness", "existence-precedes-essence"],
+  sound: { root: 130.81, mode: "ionian", beat: 0.48, pattern: 0 }
+},
+{
+  id: "tranquillity", group: "Living well", concept: "Tranquillity",
+  art: { title: "The Milkmaid", artist: "Johannes Vermeer", year: "c. 1658", kind: "suggested", q: "Vermeer The Milkmaid Rijksmuseum" },
+  thinker: "Epicurus", dates: "341–270 BCE · Greek philosopher, founder of the Garden",
+  idea: "Most of what we chase only multiplies what we fear.",
+  body: [
+    "Epicurus is remembered as the philosopher of pleasure, and the reputation is half wrong. His school met in a garden outside Athens and lived mostly on bread and water; he once asked a friend to send a little pot of cheese so he could have a feast. The pleasure he meant was ataraxia: a mind free of disturbance, not tormented by fear or craving.",
+    "He sorted desires into the natural and necessary, such as food, shelter and friendship, and the empty ones, such as fame, luxury and power, which never end because they have no natural limit. And he tried to dissolve the deepest fear with an argument: death is nothing to us, because where death is, we are not."
+  ],
+  writer: "Henry David Thoreau", work: "Walden", year: "1854",
+  quote: "I went to the woods because I wished to live deliberately",
+  pairing: ["Thoreau spent two years in a cabin he built beside Walden Pond, recording every cent he spent to show how little a good life requires. Most people, he concluded, live in quiet desperation, working to buy things they never needed."],
+  prompt: "What's something you want that, if you're honest, mostly brings you worry?",
+  placeholder: "A purchase, a status, a number, an upgrade…",
+  objection: { who: "John Stuart Mill", what: "SOME PLEASURES ARE HIGHER", text: "Mill argued that pleasures differ in quality, not just amount, and that it is better to be Socrates dissatisfied than a fool satisfied. A restless, questioning mind may be living better than a perfectly calm one." },
+  next: [["10 min", "Epicurus, Letter to Menoeceus", "His whole philosophy in a few pages."], ["1 hour", "Thoreau, Walden, “Where I Lived, and What I Lived For”", "The heart of the experiment."], ["A few hours", "Lucretius, On the Nature of Things, Book 3", "The Epicurean case against fearing death, in verse."]],
+  related: ["control", "the-will"],
+  sound: { root: 174.61, mode: "lydian", beat: 0.56, pattern: 2 }
+},
+{
+  id: "greatest-happiness", group: "Living well", concept: "Greatest happiness",
+  art: { title: "The Harvesters", artist: "Pieter Bruegel the Elder", year: "1565", kind: "suggested", q: "Bruegel The Harvesters 1565" },
+  thinker: "John Stuart Mill", dates: "1806–1873 · English philosopher and reformer",
+  idea: "The right act is the one that leaves the world happier.",
+  body: [
+    "John Stuart Mill was raised as an experiment. His father taught him Greek at three and trained him to carry on Jeremy Bentham's utilitarianism: actions are right as they tend to produce happiness, and wrong as they produce the reverse. At twenty he fell into a depression and found the calculation could not tell him why to live.",
+    "Poetry, especially Wordsworth, brought him back. He kept the principle but enlarged it: happiness has quality as well as quantity, and the pleasures of thought and feeling count for more than those of the body. Every person's happiness counts, and counts equally, a radical claim in a country where women could not vote."
+  ],
+  writer: "Ursula K. Le Guin", work: "“The Ones Who Walk Away from Omelas”", year: "1973", quote: null,
+  pairing: ["A city of perfect happiness depends on one child kept alone in misery in a cellar. Everyone knows. Most accept the bargain. A few, after seeing the child, quietly walk out of the city and never come back."],
+  prompt: "When did you last accept something unfair because it made things easier for most people?",
+  placeholder: "At work, in a group, in a family decision…",
+  objection: { who: "Bernard Williams", what: "NOT BY MY HAND", text: "Williams argued that utilitarianism treats a person as a channel for producing good outcomes and ignores that some things, my projects and my refusals, are mine. Sometimes the right answer is “not by my hand”, whatever the totals say." },
+  next: [["1 hour", "Mill, Utilitarianism, chapter 2", "The theory, and his answers to its critics."], ["30 min", "Le Guin, “The Ones Who Walk Away from Omelas”", "The shortest argument against it."], ["1 hour", "Mill, Autobiography, chapter 5", "“A Crisis in My Mental History”."]],
+  related: ["categorical-imperative", "veil-of-ignorance"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.46, pattern: 1 }
+},
+{
+  id: "que-sais-je", group: "Living well", concept: "Que sais-je?",
+  art: { title: "Hamlet and Horatio in the Graveyard", artist: "Eugène Delacroix", year: "1843, lithograph", kind: "suggested", q: "Delacroix Hamlet and Horatio in the Graveyard 1839" },
+  thinker: "Michel de Montaigne", dates: "1533–1592 · French essayist",
+  idea: "What do I know? Start there, and keep asking.",
+  body: [
+    "At thirty-eight Michel de Montaigne withdrew to a tower on his estate, with Latin sayings painted on the beams above his books, and began writing about the one subject he felt sure he could study: himself. He called the pieces essais, attempts, and in doing so invented the essay.",
+    "His motto, stamped on a medal, was Que sais-je? What do I know? It was not despair but a method: watch your own mind changing, notice how custom passes for truth, admit how much depends on mood, health and digestion. His honesty about his own inconsistency made him strangely good company, and still does."
+  ],
+  writer: "William Shakespeare", work: "Hamlet", year: "c. 1600",
+  quote: "There is nothing either good or bad, but thinking makes it so.",
+  pairing: ["Hamlet thinks more than he acts, testing every certainty, the ghost, his mother, himself, until certainty itself dissolves. Shakespeare almost certainly read Montaigne, borrowing from him in The Tempest, and Hamlet has the same restless, self-watching mind."],
+  prompt: "What were you sure of five years ago that you're less sure of now?",
+  placeholder: "A belief, a plan, an opinion of someone…",
+  objection: { who: "René Descartes", what: "DOUBT SHOULD END SOMEWHERE", text: "Descartes took Montaigne's doubt seriously and set out to defeat it. Doubt, he argued, is a tool for reaching certainty, not a place to live. Endless questioning without a foundation leaves you unable to act." },
+  next: [["20 min", "Montaigne, “Of Repentance”", "On being a different person every day."], ["30 min", "Montaigne, “That to Philosophise Is to Learn to Die”", "His early essay on death."], ["A few weeks", "Sarah Bakewell, How to Live", "Montaigne's life as twenty answers to one question."]],
+  related: ["radical-doubt", "bundle-self"],
+  sound: { root: 164.81, mode: "mixolydian", beat: 0.5, pattern: 2 }
+}
+);
+
+window.CARDS.push(
+{
+  id: "radical-doubt", group: "Knowing", concept: "Radical doubt",
+  art: { title: "Philosopher in Meditation", artist: "Rembrandt", year: "1632", kind: "suggested", q: "Rembrandt Philosopher in Meditation Louvre" },
+  thinker: "René Descartes", dates: "1596–1650 · French philosopher and mathematician",
+  idea: "Doubt everything you can. What survives is where you stand.",
+  body: [
+    "Descartes decided that to build knowledge that would last, he had to tear everything down first. In his Meditations (1641) he doubts his senses, which sometimes deceive; then whether he is awake at all, since dreams feel real; then even mathematics, imagining an evil demon devoted to deceiving him in everything.",
+    "One thing resists. Even if he is deceived, he must exist to be deceived. I think, therefore I am. From that single certainty he tried to rebuild the world, and set the agenda for modern philosophy: begin from the mind, and ask how it can ever reach anything outside itself."
+  ],
+  writer: "Philip K. Dick", work: "Do Androids Dream of Electric Sheep?", year: "1968", quote: null,
+  pairing: ["In a ruined future, bounty hunter Rick Deckard tracks androids almost indistinguishable from people. As the tests blur, he begins to doubt whether his own memories, feelings and even his humanity can be trusted."],
+  prompt: "What's something you believe that you've never actually tested?",
+  placeholder: "About yourself, a person, the world…",
+  objection: { who: "Ludwig Wittgenstein", what: "DOUBT NEEDS A FLOOR", text: "In On Certainty, Wittgenstein argued that doubt only makes sense against a background of things we don't doubt. To question whether you have hands, you must already trust the language you're asking in. Total doubt isn't rigorous; it isn't even coherent." },
+  next: [["30 min", "Descartes, Meditations I and II", "The demon, the dream and the cogito."], ["2 hours", "The Matrix (1999)", "Radical doubt as an action film."], ["A weekend", "Dick, Do Androids Dream of Electric Sheep?", "The novel behind Blade Runner."]],
+  related: ["problem-of-induction", "mind-body-dualism"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.5, pattern: 1 }
+},
+{
+  id: "blank-slate", group: "Knowing", concept: "Blank slate",
+  art: { title: "The Schoolmistress", artist: "Jean-Siméon Chardin", year: "c. 1735", kind: "suggested", q: "Chardin The Young Schoolmistress National Gallery" },
+  thinker: "John Locke", dates: "1632–1704 · English philosopher",
+  idea: "You were born knowing nothing. Everything since has been learned.",
+  body: [
+    "Against the belief that we are born with ideas already in us, of God, of right and wrong, John Locke argued in his Essay Concerning Human Understanding (1689) that the mind begins empty. Everything in it comes from experience: the senses bring in colour, sound and touch, and reflection on our own thinking builds the rest.",
+    "The idea had political force. If no one is born knowing their place, then hierarchy is not natural, and education shapes who we become. Locke's thought fed the Enlightenment's faith in learning, and the conviction that people are made, and can be remade, by their circumstances."
+  ],
+  writer: "Mary Shelley", work: "Frankenstein", year: "1818", quote: null,
+  pairing: ["The creature wakes knowing nothing. Hiding beside a cottage, he learns language, history and feeling by watching a family through a gap in the wall. He learns rejection the same way, and it shapes him into the monster everyone assumed he was."],
+  prompt: "What's something you believe that you can trace to one particular experience?",
+  placeholder: "A fear, a taste, a value, a prejudice…",
+  objection: { who: "Immanuel Kant", what: "THE MIND BRINGS SOMETHING", text: "Kant agreed that knowledge begins with experience but denied it all comes from experience. To learn anything, the mind must already order what it receives in space, time and cause. A truly empty mind could never learn at all." },
+  next: [["1 hour", "Locke, Essay, Book II, chapter 1", "Where ideas come from."], ["A weekend", "Mary Shelley, Frankenstein", "The creature's education is chapters 11–16."], ["A few weeks", "Steven Pinker, The Blank Slate", "The modern case against Locke."]],
+  related: ["lenses-of-the-mind", "idols-of-the-mind"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.58, pattern: 2 }
+},
+{
+  id: "problem-of-induction", group: "Knowing", concept: "Problem of induction",
+  art: { title: "A Philosopher Lecturing on the Orrery", artist: "Joseph Wright of Derby", year: "c. 1766", kind: "suggested", q: "Joseph Wright of Derby Philosopher Lecturing on the Orrery" },
+  thinker: "David Hume", dates: "1711–1776 · Scottish philosopher and historian",
+  idea: "The sun has always risen. That proves nothing about tomorrow.",
+  body: [
+    "David Hume asked a question so simple it took centuries to feel its weight. Every expectation we have, that bread will nourish and fire will burn, rests on the assumption that the future will resemble the past. But what justifies that assumption? Only that it has held before, which is the very thing in question.",
+    "Hume's conclusion was not panic but humility. We expect because we are creatures of habit, not because reason guarantees anything. Custom, he wrote, is the great guide of human life. We cannot live without it, and we cannot prove it."
+  ],
+  writer: "Robert Burns", work: "“To a Mouse”", year: "1785",
+  quote: "The best-laid schemes o' mice an' men / Gang aft agley",
+  pairing: ["Turning up a mouse's nest with his plough, Burns apologises to the creature: its careful preparations for winter are gone in a moment. Then he turns the thought on himself. The mouse lives only in the present; he looks back with regret, and forward with fear."],
+  prompt: "When did something you were sure would happen just… not?",
+  placeholder: "A plan, a person, a routine that broke…",
+  objection: { who: "Karl Popper", what: "SCIENCE DOESN'T NEED INDUCTION", text: "Popper accepted Hume's problem and stepped around it. Science, he argued, never proves theories from repeated cases. It proposes bold guesses and tries to refute them. A theory earns trust by surviving tests, not by piling up confirmations." },
+  next: [["30 min", "Hume, Enquiry Concerning Human Understanding, section 4", "The problem in his own words."], ["30 min", "Bertrand Russell, The Problems of Philosophy, chapter 6", "Including the chicken fed every day until it isn't."], ["A week", "Nassim Nicholas Taleb, The Black Swan", "Hume's problem in markets and history."]],
+  related: ["ockhams-razor", "lenses-of-the-mind"],
+  sound: { root: 130.81, mode: "aeolian", beat: 0.47, pattern: 0 }
+},
+{
+  id: "lenses-of-the-mind", group: "Knowing", concept: "Lenses of the mind",
+  art: { title: "The Ambassadors", artist: "Hans Holbein the Younger", year: "1533", kind: "suggested", q: "Holbein The Ambassadors National Gallery" },
+  thinker: "Immanuel Kant", dates: "1724–1804 · German philosopher",
+  idea: "We never see the world as it is, only as minds like ours can receive it.",
+  body: [
+    "Hume's scepticism, Kant said, woke him from his dogmatic slumber. His answer, in the Critique of Pure Reason (1781), turned philosophy around. Instead of asking how the mind conforms to the world, he asked how the world, as we experience it, conforms to the mind.",
+    "Space, time and cause are not features we discover out there; they are the forms our minds impose on whatever reaches us. We know things only as they appear to us, never as they are in themselves. The result is both humbling and steadying: our knowledge is real, but it has edges we can never see past."
+  ],
+  writer: "Virginia Woolf", work: "Mrs Dalloway", year: "1925", quote: null,
+  pairing: ["One June day in London: a party, an aeroplane writing letters in the sky, a shell-shocked soldier. Woolf moves from mind to mind, and the same events become entirely different worlds depending on who is perceiving them."],
+  prompt: "When did you and someone else see the same moment completely differently?",
+  placeholder: "An argument, a film, a family memory…",
+  objection: { who: "G. W. F. Hegel", what: "THE LIMIT IS ALREADY CROSSED", text: "Hegel argued that to draw a line around what we can know, you must already stand on both sides of it. Kant's unknowable “thing in itself” is either knowable after all, or an empty idea." },
+  next: [["20 min", "Kant, Prolegomena, preface", "Where Hume wakes him up."], ["3 hours", "Virginia Woolf, Mrs Dalloway", "One day, many minds."], ["1 hour", "Roger Scruton, Kant: A Very Short Introduction, chapter 3", "The first Critique made clear."]],
+  related: ["the-cave", "blank-slate"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.52, pattern: 1 }
+},
+{
+  id: "truth-as-what-works", group: "Knowing", concept: "Truth as what works",
+  art: { title: "The Veteran in a New Field", artist: "Winslow Homer", year: "1865", kind: "suggested", q: "Winslow Homer The Veteran in a New Field" },
+  thinker: "William James", dates: "1842–1910 · American philosopher and psychologist",
+  idea: "An idea is true if it makes a difference when you live by it.",
+  body: [
+    "William James trained as a doctor, tried his hand at painting, and in his late twenties fell into a crisis in which he doubted free will itself. He pulled out of it partly by deciding to believe in it: his first act of free will, he wrote in his diary, would be to believe in free will.",
+    "That became pragmatism. Don't ask what an idea copies; ask what difference it makes. Truth is not a frozen fit between a sentence and the world but something that happens to an idea as it proves itself in experience, as it guides us well, connects what we know, and works."
+  ],
+  writer: "Mark Twain", work: "Adventures of Huckleberry Finn", year: "1884",
+  quote: "All right, then, I'll go to hell",
+  pairing: ["Huck has been taught that helping an enslaved man escape is a sin. He writes a letter to turn Jim in, then tears it up. The rules he was given fail the test of living; his own experience of Jim wins."],
+  prompt: "What's a belief you hold mainly because it helps you live better?",
+  placeholder: "About people, luck, yourself, the future…",
+  objection: { who: "Bertrand Russell", what: "USEFUL ISN'T TRUE", text: "Russell objected that by James's standard, a comforting falsehood would count as true. Whether a belief is useful and whether it is true are different questions, and pragmatism blurs them." },
+  next: [["30 min", "James, “The Will to Believe”", "When we have the right to believe without proof."], ["1 hour", "James, Pragmatism, Lecture 2", "“What Pragmatism Means”."], ["A weekend", "Mark Twain, Adventures of Huckleberry Finn", "Chapter 31 is the turning point."]],
+  related: ["leap-of-faith", "problem-of-induction"],
+  sound: { root: 146.83, mode: "mixolydian", beat: 0.45, pattern: 0 }
+},
+{
+  id: "limits-of-language", group: "Knowing", concept: "Limits of language",
+  art: { title: "The Tower of Babel", artist: "Pieter Bruegel the Elder", year: "1563", kind: "traditional", q: "Bruegel Tower of Babel Vienna 1563" },
+  thinker: "Ludwig Wittgenstein", dates: "1889–1951 · Austrian-British philosopher",
+  idea: "The limits of my language mean the limits of my world.",
+  body: [
+    "Ludwig Wittgenstein worked on his first book, the Tractatus, while serving in the First World War, and believed it had solved philosophy. Language, he argued, can picture facts; what cannot be pictured, such as ethics, meaning and the mystical, cannot be said, only shown. It ends: whereof one cannot speak, thereof one must be silent.",
+    "Then he changed his mind. In his later work, meaning is not a picture but a use: words get their sense from the countless “language games” we play with them, ordering, joking, praying, promising. Many philosophical problems, he decided, arise when words are cut loose from the life that gives them meaning."
+  ],
+  writer: "Lewis Carroll", work: "Through the Looking-Glass", year: "1871",
+  quote: "When I use a word, it means just what I choose it to mean",
+  pairing: ["Humpty Dumpty insists he can make words mean whatever he likes, and Alice wonders whether you really can. Carroll, a logician, saw the problem: a private meaning is no meaning at all, because language only works when it is shared."],
+  prompt: "What's a feeling you've had that you've never found the right words for?",
+  placeholder: "A mood, a place, a kind of tiredness…",
+  objection: { who: "Michael Polanyi", what: "WE KNOW MORE THAN WE CAN SAY", text: "Polanyi argued that we know far more than we can put into words: how to ride a bike, recognise a face, read a mood. Language doesn't mark the edge of our world; much of our grip on it runs underneath words." },
+  next: [["10 min", "Wittgenstein, Tractatus, preface and final page", "The book's frame in two pages."], ["1 hour", "Philosophical Investigations, §§1–43", "The later Wittgenstein starts again."], ["A few weeks", "Ray Monk, Wittgenstein: The Duty of Genius", "A biography as gripping as a novel."]],
+  related: ["deconstruction", "the-other"],
+  sound: { root: 123.47, mode: "aeolian", beat: 0.6, pattern: 2 }
+},
+{
+  id: "ockhams-razor", group: "Knowing", concept: "Ockham's razor",
+  art: { title: "Still Life with Lemons, Oranges and a Rose", artist: "Francisco de Zurbarán", year: "1633", kind: "suggested", q: "Zurbaran Still Life with Lemons Oranges and a Rose" },
+  thinker: "William of Ockham", dates: "c. 1287–1347 · English friar and logician",
+  idea: "Don't add more to an explanation than it needs.",
+  body: [
+    "William of Ockham was an English Franciscan friar and logician who argued that the universals philosophers loved, “humanity”, “redness”, are not real things existing above the world but names we give to similar individuals. Only particular things exist. His arguments, and his quarrels with the Pope, got him excommunicated.",
+    "The principle named after him, though he never put it in the famous words, is that entities should not be multiplied beyond necessity. If two explanations fit the facts, prefer the one that assumes less. It began as a weapon in medieval debates and became a working rule of science."
+  ],
+  writer: "Arthur Conan Doyle", work: "The Sign of the Four", year: "1890",
+  quote: "when you have eliminated the impossible, whatever remains, however improbable, must be the truth",
+  pairing: ["Holmes refuses the dramatic theory and the supernatural one. He strips a case down to what the evidence actually requires, then follows what is left, even when it seems unlikely."],
+  prompt: "What's a situation you overcomplicated in your head that turned out to be simple?",
+  placeholder: "A message you read into, a worry, a plan…",
+  objection: { who: "Walter Chatton", what: "THE ANTI-RAZOR", text: "Ockham's contemporary Walter Chatton proposed the opposite rule: if fewer things can't explain the facts, add more. The world has no duty to be simple, and the simplest story is often just the one that ignores the evidence that doesn't fit." },
+  next: [["1 hour", "Conan Doyle, “A Scandal in Bohemia”", "The case Holmes gets wrong."], ["2 hours", "The Hound of the Baskervilles", "The supernatural explanation, stripped away."], ["A few weeks", "Umberto Eco, The Name of the Rose", "Its detective-monk is a follower of Ockham."]],
+  related: ["problem-of-induction", "best-possible-world"],
+  sound: { root: 164.81, mode: "ionian", beat: 0.55, pattern: 2 }
+},
+{
+  id: "idols-of-the-mind", group: "Knowing", concept: "Idols of the mind",
+  art: { title: "Frontispiece of the Novum Organum", artist: "Engraved title page", year: "1620", kind: "traditional", q: "Novum Organum 1620 frontispiece" },
+  thinker: "Francis Bacon", dates: "1561–1626 · English philosopher and statesman",
+  idea: "Before you trust what you see, learn the ways your mind bends it.",
+  body: [
+    "Francis Bacon, lawyer, politician and philosopher, wanted to rebuild knowledge on observation and experiment. In the Novum Organum (1620) he argued that before we can see nature clearly, we have to know what distorts our seeing.",
+    "He named four “idols”: of the tribe, errors built into human nature, like finding patterns that aren't there; of the cave, each person's private biases; of the marketplace, confusions caused by words; and of the theatre, the grand systems we inherit and mistake for truth. It is a list of cognitive biases written four hundred years early."
+  ],
+  writer: "Jane Austen", work: "Pride and Prejudice", year: "1813", quote: null,
+  pairing: ["Elizabeth Bennet prides herself on reading people, and reads Darcy completely wrong: one overheard insult, one charming liar, and her judgement is set. Austen's first title for the novel was First Impressions."],
+  prompt: "Who did you misjudge at first, and what changed your mind?",
+  placeholder: "A colleague, a neighbour, a friend…",
+  objection: { who: "Thomas Kuhn", what: "THERE'S NO VIEW FROM NOWHERE", text: "Kuhn argued that scientists always see through a paradigm, a shared framework of assumptions. You can swap one framework for another, but you can never observe from outside all of them. Bacon's idol-free vision doesn't exist." },
+  next: [["20 min", "Bacon, Novum Organum, Book I, aphorisms 38–44", "The four idols defined."], ["A weekend", "Jane Austen, Pride and Prejudice", "Prejudice, then correction."], ["A few weeks", "Daniel Kahneman, Thinking, Fast and Slow", "The idols, tested in a lab."]],
+  related: ["power-knowledge", "bad-faith"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.48, pattern: 0 }
+}
+);
+
+window.CARDS.push(
+{
+  id: "flux", group: "Reality", concept: "Flux",
+  art: { title: "Rain, Steam and Speed", artist: "J. M. W. Turner", year: "1844", kind: "suggested", q: "Turner Rain Steam and Speed Great Western Railway" },
+  thinker: "Heraclitus", dates: "c. 535–475 BCE · Greek philosopher of Ephesus",
+  idea: "Everything flows. Nothing stays, not even you.",
+  body: [
+    "Heraclitus of Ephesus wrote in riddles, and the ancients called him “the obscure”. Only fragments survive, quoted by later writers. The most famous: you cannot step into the same river twice, for other waters are always flowing on.",
+    "But he was not only saying that things change. He saw order inside the change: a logos, a measure, by which opposites turn into one another. Cold things warm, the living die, day becomes night. What looks stable is the visible form of constant exchange. Strife, he said, is the father of all things."
+  ],
+  writer: "T. S. Eliot", work: "Four Quartets", year: "1943", quote: null,
+  pairing: ["Eliot opens the first quartet, “Burnt Norton”, with two fragments of Heraclitus in Greek. The poems circle time itself: how the past persists in the present, how every moment is both passing and permanent, and whether stillness can be found inside the turning world."],
+  prompt: "What's changed in you so slowly that you only noticed it recently?",
+  placeholder: "A taste, a habit, a fear, a friendship…",
+  objection: { who: "Parmenides", what: "CHANGE IS AN ILLUSION", text: "Parmenides argued the opposite: for something to change, it must become what it is not, and what is not cannot be. Change is a trick of the senses; reality is one and still. The two have been arguing ever since." },
+  next: [["10 min", "Heraclitus, the fragments", "All that survives fits on two pages."], ["20 min", "T. S. Eliot, “Burnt Norton”", "The first of the Four Quartets."], ["2 hours", "Hermann Hesse, Siddhartha", "A life learned from a river."]],
+  related: ["being-is-one", "bundle-self"],
+  sound: { root: 174.61, mode: "lydian", beat: 0.36, pattern: 0 }
+},
+{
+  id: "the-cave", group: "Reality", concept: "The cave and the Forms",
+  art: { title: "Plato's Cave", artist: "Jan Saenredam, after Cornelis van Haarlem", year: "1604", kind: "traditional", q: "Saenredam Plato's Cave 1604" },
+  thinker: "Plato", dates: "c. 428–348 BCE · Athenian philosopher, student of Socrates",
+  idea: "What you take for reality may be shadows on a wall.",
+  body: [
+    "In the Republic, Plato asks us to imagine prisoners chained in a cave since childhood, facing a wall. Behind them a fire burns, and objects carried past it cast shadows. The shadows are all the prisoners have ever seen, so they take them for the whole of reality.",
+    "One prisoner is freed, dragged painfully up into daylight, and slowly learns to see real things, and at last the sun. When he returns to tell the others, they mock him, and would kill him if they could. For Plato, the visible world is the cave; the Forms, justice itself and beauty itself, are what is real, known only by the mind. Philosophy is the climb."
+  ],
+  writer: "Aldous Huxley", work: "Brave New World", year: "1932", quote: null,
+  pairing: ["In the World State, people are engineered for contentment and kept there with pleasure, distraction and a drug called soma. When John, raised outside it, arrives demanding truth, art and even suffering, the society cannot understand him, and he cannot survive it."],
+  prompt: "What's a comfortable illusion you'd rather not look behind?",
+  placeholder: "About money, a relationship, your phone, the news…",
+  objection: { who: "Aristotle", what: "THE FORMS ARE IN THINGS", text: "Aristotle, Plato's own student, rejected a separate world of Forms. Beauty and justice exist only in beautiful and just things. To understand the world, look harder at it, not away from it." },
+  next: [["15 min", "Plato, Republic, Book VII, opening", "The cave in Plato's words."], ["2 hours", "The Truman Show (1998)", "A man discovers the walls of his world."], ["A weekend", "Aldous Huxley, Brave New World", "The cave made comfortable."]],
+  related: ["lenses-of-the-mind", "to-be-is-to-be-perceived"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.54, pattern: 1 }
+},
+{
+  id: "being-is-one", group: "Reality", concept: "Being is one",
+  art: { title: "Dust Motes Dancing in the Sunbeams", artist: "Vilhelm Hammershøi", year: "1900", kind: "suggested", q: "Hammershoi Dust Motes Dancing in the Sunbeams" },
+  thinker: "Parmenides", dates: "born c. 515 BCE · Greek philosopher of Elea",
+  idea: "What is, is. Change and difference may be the illusion.",
+  body: [
+    "Parmenides of Elea wrote a single poem, in which a goddess shows him two paths: the way of truth and the way of mortal opinion. The way of truth starts from one thought. What is, is; what is not, is not. You cannot think or speak of nothing.",
+    "Follow that strictly and the world as we see it falls apart. Coming into being would mean arising from what is not; change would mean becoming what one is not. So reality must be one, whole, unchanging and timeless. His student Zeno defended him with paradoxes, such as the arrow that, at every instant of its flight, is not moving."
+  ],
+  writer: "Jorge Luis Borges", work: "“A New Refutation of Time”", year: "1947", quote: null,
+  pairing: ["Borges argues, half playfully and half in earnest, that time might not exist: that two identical moments are not two but one, and that the succession we feel is an illusion. Then he admits that time is the very substance he is made of, and that the world, unfortunately, is real."],
+  prompt: "What's a moment that felt outside of time while you were in it?",
+  placeholder: "A swim, a conversation, a piece of music…",
+  objection: { who: "Aristotle", what: "CHANGE IS POTENTIAL BECOMING ACTUAL", text: "Aristotle answered Parmenides by distinguishing ways of being. A seed is not yet a tree, but it is a tree potentially. Change is not something coming from nothing; it is what was possible becoming real." },
+  next: [["10 min", "Parmenides, “On Nature” (the fragments)", "The goddess and the two ways."], ["30 min", "Zeno's paradoxes", "Achilles, the tortoise and the arrow."], ["1 hour", "Borges, “A New Refutation of Time”", "In the collection Labyrinths."]],
+  related: ["flux", "god-or-nature"],
+  sound: { root: 110.0, mode: "aeolian", beat: 0.72, pattern: 2 }
+},
+{
+  id: "god-or-nature", group: "Reality", concept: "God or Nature",
+  art: { title: "The Monk by the Sea", artist: "Caspar David Friedrich", year: "1808–10", kind: "suggested", q: "Caspar David Friedrich Monk by the Sea" },
+  thinker: "Baruch Spinoza", dates: "1632–1677 · Dutch philosopher",
+  idea: "There is one substance. Call it God, or call it Nature.",
+  body: [
+    "Baruch Spinoza was expelled from Amsterdam's Jewish community at twenty-three for “abominable heresies”, and earned his living grinding lenses. His Ethics, published after his death, is set out like geometry: definitions, axioms, propositions, proofs.",
+    "Its conclusion is breathtaking. There is only one substance, infinite and the cause of itself, which he called Deus sive Natura, God or Nature. Everything, stars, bodies and thoughts, is a way that substance expresses itself. There is no free will and no cosmic purpose. But there is freedom of another kind: understanding why things happen, and so ceasing to be tormented by them."
+  ],
+  writer: "William Wordsworth", work: "“Lines Composed a Few Miles above Tintern Abbey”", year: "1798",
+  quote: "A motion and a spirit, that impels / All thinking things",
+  pairing: ["Returning to the Wye valley after five years, Wordsworth feels a presence running through the setting sun, the ocean, the living air and his own mind: one life in everything. Readers have long heard Spinoza in it."],
+  prompt: "Where have you felt most part of something larger than yourself?",
+  placeholder: "A mountain, a crowd, the sea, a garden…",
+  objection: { who: "Gottfried Leibniz", what: "A GOD WITHOUT A WILL", text: "Leibniz, who visited Spinoza in 1676, saw where the system led: a God with no will and no choice, and a world with no purpose. If everything is necessary, nothing is good because it was chosen, and gratitude and hope lose their object." },
+  next: [["30 min", "Spinoza, Ethics, appendix to Part I", "His attack on the idea that nature has purposes."], ["20 min", "Wordsworth, “Tintern Abbey”", "Read it aloud."], ["A weekend", "Rebecca Goldstein, Betraying Spinoza", "His life and excommunication."]],
+  related: ["amor-fati", "being-is-one"],
+  sound: { root: 130.81, mode: "lydian", beat: 0.6, pattern: 2 }
+},
+{
+  id: "to-be-is-to-be-perceived", group: "Reality", concept: "To be is to be perceived",
+  art: { title: "Las Meninas", artist: "Diego Velázquez", year: "1656", kind: "suggested", q: "Velazquez Las Meninas Prado" },
+  thinker: "George Berkeley", dates: "1685–1753 · Irish philosopher and bishop",
+  idea: "Esse est percipi: to be is to be perceived.",
+  body: [
+    "George Berkeley pushed empiricism to a startling end. All we ever meet are perceptions: colours, sounds, textures, tastes. What would it even mean for an apple to exist apart from all of them? Take away every quality we perceive, and nothing is left.",
+    "So, he argued, there is no material stuff behind our experience. Things exist as they are perceived, and they don't vanish when no one is looking, because they are always perceived by God. Samuel Johnson, told the argument was impossible to refute, kicked a large stone and said, “I refute it thus.”"
+  ],
+  writer: "Ralph Ellison", work: "Invisible Man", year: "1952", quote: null,
+  pairing: ["The narrator is not literally invisible. People simply refuse to see him: they see their own assumptions about a Black man, never him. Ellison turns Berkeley's question social: if no one perceives you as you are, in what sense do you exist to them?"],
+  prompt: "When have you felt unseen, even in a room full of people?",
+  placeholder: "At work, at a party, in your family…",
+  objection: { who: "Thomas Reid", what: "COMMON SENSE", text: "Reid argued that belief in an external world is a first principle built into us, which no argument can really shake. A philosophy that ends by denying it has made a mistake somewhere along the way, even if we can't yet say where." },
+  next: [["1 hour", "Berkeley, Three Dialogues, the first", "The argument as a conversation."], ["A weekend", "Ralph Ellison, Invisible Man", "Start with the prologue."], ["20 min", "Boswell, Life of Johnson, 6 August 1763", "The stone-kicking, as it was recorded."]],
+  related: ["the-cave", "embodiment"],
+  sound: { root: 130.81, mode: "aeolian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "best-possible-world", group: "Reality", concept: "Best possible world",
+  art: { title: "The Lisbon Earthquake of 1755", artist: "Contemporary copper engraving", year: "1755", kind: "traditional", q: "1755 Lisbon earthquake copper engraving" },
+  thinker: "Gottfried Wilhelm Leibniz", dates: "1646–1716 · German philosopher and mathematician",
+  idea: "If God chose this world, it must be the best one possible.",
+  body: [
+    "Leibniz invented calculus independently of Newton, designed calculating machines, and tried to reunite the churches of Europe. He also faced the oldest problem in theology: if God is good and all-powerful, why is there evil?",
+    "His answer: God considered every possible world and chose the best. Not a world without suffering, but the best overall whole, in which some evils make greater goods possible. We judge from inside a tiny fragment of it. After the Lisbon earthquake of 1755 killed tens of thousands on All Saints' Day, that answer became much harder to say aloud."
+  ],
+  writer: "Voltaire", work: "Candide", year: "1759",
+  quote: "all is for the best in the best of all possible worlds",
+  pairing: ["Candide's tutor Pangloss teaches that everything happens for the best. Then come war, shipwreck, the Lisbon earthquake, the Inquisition and slavery. Voltaire ends with Candide's quieter conclusion: stop theorising, and cultivate your garden."],
+  prompt: "What's something bad that happened that you now think was for the best? Was it really?",
+  placeholder: "A rejection, a breakup, a missed chance…",
+  objection: { who: "Ivan Karamazov", what: "I RETURN THE TICKET", text: "In Dostoevsky's novel, Ivan argues that no future harmony could justify the suffering of a single tortured child. Even if the sums add up, he wants no part of a world built at that price, and respectfully returns his ticket." },
+  next: [["2 hours", "Voltaire, Candide", "Short, savage and funny."], ["30 min", "Voltaire, “Poem on the Lisbon Disaster”", "Written within weeks of the quake."], ["1 hour", "Dostoevsky, The Brothers Karamazov, “Rebellion”", "Ivan's case, in one chapter."]],
+  related: ["the-absurd", "amor-fati"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.44, pattern: 1 }
+}
+);
+
+window.CARDS.push(
+{
+  id: "mind-body-dualism", group: "Self and mind", concept: "Mind–body dualism",
+  art: { title: "The pineal gland, from Treatise of Man", artist: "René Descartes", year: "1664", kind: "traditional", q: "Descartes pineal gland Treatise of Man illustration" },
+  thinker: "René Descartes", dates: "1596–1650 · French philosopher and mathematician",
+  idea: "Your mind and your body may be two different kinds of thing.",
+  body: [
+    "Having proved to himself that he exists as a thinking thing, Descartes noticed something strange. He could doubt that he had a body, but not that he had a mind. So mind and body must be different substances: one that thinks and takes up no space, the other that takes up space and does not think.",
+    "But if they are so different, how do they touch? How does a decision move an arm, or a pin-prick become pain? Descartes proposed that they meet in the pineal gland, deep in the brain. Princess Elisabeth of Bohemia pressed him on it in a series of letters, and he never fully answered her. Nobody since has quite managed it either."
+  ],
+  writer: "Franz Kafka", work: "The Metamorphosis", year: "1915", quote: null,
+  pairing: ["Gregor Samsa wakes to find himself transformed into a monstrous insect. His mind is unchanged: he still worries about missing his train and supporting his family. But his body no longer obeys him, his voice no longer carries words, and slowly the body begins to change the mind as well."],
+  prompt: "When did your body and mind seem to want different things?",
+  placeholder: "Tired but wired, scared but calm, full but still hungry…",
+  objection: { who: "Gilbert Ryle", what: "THE GHOST IN THE MACHINE", text: "Ryle called dualism the myth of “the ghost in the machine”. The mind, he argued, is not a hidden second thing; it is the way a person behaves, talks and acts. Looking for it as a separate object is a category mistake." },
+  next: [["30 min", "Descartes, Meditation VI", "Where mind and body come apart."], ["1 hour", "Franz Kafka, The Metamorphosis", "A mind trapped in the wrong body."], ["1 hour", "The Descartes–Elisabeth letters, 1643", "The best objection, made at the time."]],
+  related: ["embodiment", "the-unconscious"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.52, pattern: 2 }
+},
+{
+  id: "bundle-self", group: "Self and mind", concept: "Bundle self",
+  art: { title: "Rouen Cathedral, the Portal, Morning Sun", artist: "Claude Monet", year: "1893", kind: "suggested", q: "Monet Rouen Cathedral series" },
+  thinker: "David Hume", dates: "1711–1776 · Scottish philosopher and historian",
+  idea: "Look inside for your self, and you find only passing perceptions.",
+  body: [
+    "When Hume tried to observe his own self, he found something unsettling. Whenever he looked inward, he always stumbled on some particular perception, heat or cold, love or pain, but never a self beneath them, never a “me” without a perception.",
+    "The self, he concluded, is nothing but a bundle of perceptions in constant flux, held together by memory and resemblance. We invent a single unchanging identity because the changes are so smooth. Buddhist thinkers had reached a similar view two thousand years earlier; Hume reached it alone, in his twenties."
+  ],
+  writer: "Marcel Proust", work: "In Search of Lost Time", year: "1913–27", quote: null,
+  pairing: ["A madeleine dipped in tea brings back an entire childhood, a self the narrator didn't know he still contained. Across seven volumes, Proust shows a person as a series of selves, each lost and occasionally recovered through a taste, a smell, a sound."],
+  prompt: "What smell, song or taste brings back a version of you that's gone?",
+  placeholder: "A perfume, a street, a song from school…",
+  objection: { who: "Thomas Reid", what: "SOMEONE IS HAVING THE PERCEPTIONS", text: "Reid replied that a bundle of perceptions must be someone's. “I” am not a thought or a feeling but the one who thinks and feels, and memory shows me I am the same person who did things years ago." },
+  next: [["20 min", "Hume, Treatise, 1.4.6, “Of Personal Identity”", "The argument in six pages."], ["1 hour", "Proust, Swann's Way, the overture", "Including the madeleine."], ["A few weeks", "Derek Parfit, Reasons and Persons, Part Three", "Why identity may not be what matters."]],
+  related: ["flux", "the-unconscious"],
+  sound: { root: 164.81, mode: "lydian", beat: 0.44, pattern: 1 }
+},
+{
+  id: "the-unconscious", group: "Self and mind", concept: "The unconscious",
+  art: { title: "The Nightmare", artist: "Henry Fuseli", year: "1781", kind: "traditional", q: "Fuseli The Nightmare 1781 Detroit" },
+  thinker: "Sigmund Freud", dates: "1856–1939 · Austrian neurologist, founder of psychoanalysis",
+  idea: "Most of what moves you is hidden from you.",
+  body: [
+    "Sigmund Freud, a Viennese neurologist, came to believe that the mind is mostly hidden from itself. Wishes, fears and memories too painful to face are pushed out of awareness, but they do not disappear. They return in disguise: in dreams, slips of the tongue, jokes and symptoms.",
+    "His method was to listen: let patients say whatever came to mind, and follow the associations down. Much of his theory has been disputed or abandoned. But the core idea, that we are not transparent to ourselves and that our reasons are often not our real reasons, changed how the twentieth century understood a person."
+  ],
+  writer: "Robert Louis Stevenson", work: "Strange Case of Dr Jekyll and Mr Hyde", year: "1886",
+  quote: "man is not truly one, but truly two",
+  pairing: ["The respected Dr Jekyll drinks a potion that releases Edward Hyde, a self without conscience. At first he can return at will. Then Hyde starts appearing unbidden, and Jekyll discovers that the part of himself he kept hidden has been growing stronger."],
+  prompt: "When did you do something and only later realise the real reason why?",
+  placeholder: "A snap reaction, a purchase, an argument…",
+  objection: { who: "Jean-Paul Sartre", what: "THERE IS NO HIDDEN ROOM", text: "Sartre argued that “the unconscious” lets us disown what we half-know. To repress a thought, part of you must recognise it in order to avoid it. That isn't hidden; it's bad faith." },
+  next: [["1 hour", "Freud, The Psychopathology of Everyday Life, chapter 1", "Why we forget names."], ["2 hours", "Stevenson, Jekyll and Hyde", "Read the last chapter twice."], ["A weekend", "Freud, The Interpretation of Dreams, chapter 2", "The dream that started it all."]],
+  related: ["bad-faith", "the-will"],
+  sound: { root: 110.0, mode: "phrygian", beat: 0.58, pattern: 1 }
+},
+{
+  id: "embodiment", group: "Self and mind", concept: "Embodiment",
+  art: { title: "The Thinker, on The Gates of Hell", artist: "Auguste Rodin", year: "1880–1917", kind: "suggested", q: "Rodin The Thinker bronze" },
+  thinker: "Maurice Merleau-Ponty", dates: "1908–1961 · French phenomenologist",
+  idea: "You don't have a body. You are one, and you think with it.",
+  body: [
+    "Maurice Merleau-Ponty argued that philosophy had forgotten the body. We treat it as an object the mind steers, but that is not how we live. When you reach for a cup, you don't calculate distances; your hand already knows where it is.",
+    "Perception, for him, is not data arriving at a mind but a body engaging a world. A blind man's cane becomes part of his sense of touch; a typist's fingers know the keyboard better than her memory does. Meaning starts in movement, posture and gesture long before it becomes thought."
+  ],
+  writer: "D. H. Lawrence", work: "Women in Love", year: "1920", quote: null,
+  pairing: ["Lawrence's characters often know things through their bodies before their minds catch up: attraction, dread, recognition. He distrusted lives lived only in the head, and wrote toward a knowledge carried in the blood and nerves."],
+  prompt: "What does your body know how to do that you couldn't explain in words?",
+  placeholder: "A dance, a recipe, a sport, a route home…",
+  objection: { who: "René Descartes", what: "THE BODY CAN DECEIVE", text: "Descartes would answer that you can be wrong about your body, since amputees feel pain in limbs they no longer have, but you cannot be wrong that you are thinking. Whatever the body does, certainty starts in the mind." },
+  next: [["1 hour", "Merleau-Ponty, The World of Perception, lecture 1", "His radio talks, written for anyone."], ["1 hour", "Sarah Bakewell, At the Existentialist Café", "Read the chapter on Merleau-Ponty."], ["A few weeks", "Merleau-Ponty, Phenomenology of Perception", "The full argument."]],
+  related: ["mind-body-dualism", "back-to-the-things"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.46, pattern: 0 }
+},
+{
+  id: "the-other", group: "Self and mind", concept: "The Other",
+  art: { title: "Olympia", artist: "Édouard Manet", year: "1863", kind: "suggested", q: "Manet Olympia 1863 Orsay" },
+  thinker: "Simone de Beauvoir", dates: "1908–1986 · French philosopher and novelist",
+  idea: "No one is born into their role. It is made, and often made by others.",
+  body: [
+    "In The Second Sex (1949), Simone de Beauvoir asked why, through history, man has been the default human and woman defined in relation to him: the second sex, the Other. Not by nature, she argued, but through a long accumulation of myths, laws, upbringing and expectations.",
+    "Her best-known claim is that one is not born a woman but becomes one. Identity is shaped by how others look at us and what they allow. Seeing this is the first step to freedom, because what has been made can be remade."
+  ],
+  writer: "Jean Rhys", work: "Wide Sargasso Sea", year: "1966", quote: null,
+  pairing: ["In Jane Eyre, Bertha Mason is the madwoman in the attic, a figure seen only through other people's eyes. Rhys gives her a childhood in Jamaica, a name, Antoinette, and a voice, and shows how a woman is turned into a monster by a husband and a world that define her."],
+  prompt: "When did you notice you were playing a role others had written for you?",
+  placeholder: "At home, at work, as a son, a partner, a friend…",
+  objection: { who: "Judith Butler", what: "IT GOES DEEPER", text: "Butler argued that de Beauvoir didn't go far enough. She assumed a body that is female first and becomes a woman afterward. Even that starting point, Butler says, is shaped by the culture that names it." },
+  next: [["1 hour", "De Beauvoir, The Second Sex, introduction", "Why woman became the Other."], ["3 hours", "Jean Rhys, Wide Sargasso Sea", "The attic, from inside."], ["A few weeks", "De Beauvoir, Memoirs of a Dutiful Daughter", "How she became herself."]],
+  related: ["power-knowledge", "existence-precedes-essence"],
+  sound: { root: 130.81, mode: "aeolian", beat: 0.5, pattern: 2 }
+},
+{
+  id: "restless-heart", group: "Self and mind", concept: "Restless heart",
+  art: { title: "Saint Augustine in His Study", artist: "Sandro Botticelli", year: "1480", kind: "traditional", q: "Botticelli Saint Augustine in His Study 1480 Ognissanti" },
+  thinker: "Augustine of Hippo", dates: "354–430 · North African theologian and philosopher",
+  idea: "We want more than any one thing can give.",
+  body: [
+    "Augustine spent his youth chasing pleasure, prestige and philosophy, and found none of them enough. In his Confessions, written around 400, he tells the story of that hunger: stealing pears he didn't even want, ambition in Milan, a long love he gave up.",
+    "His conclusion opens the book: our heart is restless until it rests in God. Every desire, he thought, is a misdirected reaching for something infinite, which finite things can't satisfy. You don't need to share his faith to recognise the restlessness he describes."
+  ],
+  writer: "F. Scott Fitzgerald", work: "The Great Gatsby", year: "1925",
+  quote: "So we beat on, boats against the current",
+  pairing: ["Gatsby builds a fortune, a mansion and nightly parties to win back Daisy, whose green dock light shines across the bay. When he finally reaches her, she is less than the dream. What he wanted was never quite her."],
+  prompt: "What did you want badly, get, and find was not quite enough?",
+  placeholder: "A job, a city, a thing, a person…",
+  objection: { who: "Epicurus", what: "DESIRE CAN BE SATISFIED", text: "Epicurus thought restlessness comes from empty desires, not from human nature. Want only what is natural and necessary, and the heart can rest here and now, with bread, friends and a garden." },
+  next: [["30 min", "Augustine, Confessions, Book I", "The restless heart, and the opening prayer."], ["3 hours", "F. Scott Fitzgerald, The Great Gatsby", "Desire that outruns its object."], ["1 hour", "Augustine, Confessions, Book II", "The pear tree."]],
+  related: ["the-will", "leap-of-faith"],
+  sound: { root: 123.47, mode: "aeolian", beat: 0.48, pattern: 0 }
+},
+{
+  id: "mimetic-desire", group: "Self and mind", concept: "Mimetic desire",
+  art: { title: "Don Quixote in his Library", artist: "Gustave Doré", year: "1863", kind: "suggested", q: "Gustave Dore Don Quixote reading library 1863" },
+  thinker: "René Girard", dates: "1923–2015 · French literary critic and anthropologist",
+  idea: "We don't know what to want. So we want what others want.",
+  body: [
+    "René Girard, a French critic teaching in America, noticed a pattern running through the great novels. Characters believe their desires are their own, but they are almost always borrowed. Don Quixote wants to be a knight because he has read about Amadis of Gaul. Emma Bovary wants passion because she has read romances. Between a person and the thing desired, there is always a model.",
+    "Because we want what our models want, desire draws people together and then sets them against each other: the more alike we become, the more we compete for the same things. Girard saw that rivalry spreading through groups until it found a scapegoat, someone blamed and expelled so that peace could return. The pattern, he argued, sits underneath fashion, envy, markets and violence alike."
+  ],
+  writer: "Gustave Flaubert", work: "Madame Bovary", year: "1857", quote: null,
+  pairing: ["Emma grew up on romantic novels, and marries hoping her life will feel like them. When it doesn't, she chases the feelings the books promised, through affairs, luxuries and debts, without ever noticing that what she wants was written for her by someone else."],
+  prompt: "What's something you wanted only after you saw someone else want it?",
+  placeholder: "A job, a jacket, a holiday, a person…",
+  objection: { who: "Girard's critics", what: "IT EXPLAINS TOO MUCH", text: "Critics argue that a theory able to explain every desire, rivalry and myth risks explaining nothing: if every case confirms it, no case can test it. And some wants, hunger, warmth, an infant reaching for its mother, seem to come before any model." },
+  next: [["1 hour", "Girard, Deceit, Desire and the Novel, chapter 1", "Where the idea begins."], ["A weekend", "Gustave Flaubert, Madame Bovary", "Desire borrowed from books."], ["A weekend", "Luke Burgis, Wanting", "Mimetic desire in work and everyday life."]],
+  related: ["restless-heart", "power-knowledge"],
+  sound: { root: 146.83, mode: "mixolydian", beat: 0.5, pattern: 1 }
+}
+);
+
+window.CARDS.push(
+{
+  id: "thrownness", group: "Existence and meaning", concept: "Thrownness",
+  art: { title: "A Pair of Shoes", artist: "Vincent van Gogh", year: "1886", kind: "traditional", q: "Van Gogh A Pair of Shoes 1886 Van Gogh Museum" },
+  thinker: "Martin Heidegger", dates: "1889–1976 · German philosopher",
+  idea: "You arrive mid-sentence, in a world you never chose.",
+  body: [
+    "Martin Heidegger's Being and Time (1927) begins with a question he thought philosophy had forgotten: what does it mean to be? He started not with minds or objects but with the kind of being we are, Dasein, “being-there”, always already in a world, caring about things, absorbed in tasks.",
+    "We are thrown into that world: a time, a place, a language, a body, a family, none of them chosen. Most of the time we flee into what “one” says and does. Facing our thrownness, and the death that bounds it, can make a life our own. His support for the Nazis makes him one of philosophy's most troubling figures; his ideas still shaped almost everything that came after."
+  ],
+  writer: "Charles Dickens", work: "Great Expectations", year: "1861", quote: null,
+  pairing: ["The story opens in a churchyard on the marshes, where a small boy reads his dead parents' gravestones, his name and his station in life already settled for him. Then a convict seizes him, and the rest of Pip's life is shaped by a moment he never chose."],
+  prompt: "What about your life did you not choose, but have to live inside?",
+  placeholder: "A family, a country, a body, a time…",
+  objection: { who: "Theodor Adorno", what: "THE JARGON OF AUTHENTICITY", text: "Adorno accused Heidegger of wrapping vague words, being, authenticity, thrownness, in a solemn tone that made them sound profound while saying little. Worse, he argued, a philosophy of rootedness and destiny made it easier to accept the politics of blood and soil." },
+  next: [["1 hour", "Sarah Bakewell, At the Existentialist Café", "Read the chapters on Heidegger."], ["1 hour", "Dickens, Great Expectations, chapters 1–5", "The churchyard and the convict."], ["A few months", "Heidegger, Being and Time", "With a guide beside you."]],
+  related: ["bad-faith", "back-to-the-things"],
+  sound: { root: 110.0, mode: "aeolian", beat: 0.56, pattern: 2 }
+},
+{
+  id: "back-to-the-things", group: "Existence and meaning", concept: "Back to the things themselves",
+  art: { title: "Mont Sainte-Victoire", artist: "Paul Cézanne", year: "c. 1887", kind: "traditional", q: "Cezanne Mont Sainte-Victoire Courtauld" },
+  thinker: "Edmund Husserl", dates: "1859–1938 · German philosopher, founder of phenomenology",
+  idea: "Before you explain experience, look at it as it actually shows up.",
+  body: [
+    "Edmund Husserl founded phenomenology with a rallying cry: back to the things themselves. Philosophy, he thought, had buried experience under theories about it. He proposed to set those theories aside, to bracket even the question of whether the world exists, and describe exactly how things appear.",
+    "What he found was richness. Consciousness is always consciousness of something; it reaches toward its objects. A cube is seen from one side but experienced as having others; a melody is heard as a whole, though only one note sounds at a time. His students, Heidegger among them, carried the method through the century."
+  ],
+  writer: "Rainer Maria Rilke", work: "New Poems, “The Panther”", year: "1907", quote: null,
+  pairing: ["Rilke learned from the sculptor Rodin to look at a single thing until it revealed itself. In “The Panther” he watches a caged animal pacing at the Paris zoo, until the bars seem to be the whole of its world, and an image slips in through its eyes and stops in its heart."],
+  prompt: "What ordinary thing did you look at properly for the first time recently?",
+  placeholder: "A tree, your hands, a street, a cup of coffee…",
+  objection: { who: "Jacques Derrida", what: "THERE IS NO PURE APPEARANCE", text: "Derrida argued that Husserl's pure experience is already shaped by language, memory and expectation. There is no untouched moment of presence to return to; every appearance already carries traces of other things." },
+  next: [["10 min", "Rilke, “The Panther”", "Read two translations side by side."], ["1 hour", "Sarah Bakewell, At the Existentialist Café, the Husserl chapter", "Phenomenology over apricot cocktails."], ["A few weeks", "Husserl, Cartesian Meditations", "His own introduction to the method."]],
+  related: ["thrownness", "embodiment"],
+  sound: { root: 130.81, mode: "ionian", beat: 0.66, pattern: 2 }
+},
+{
+  id: "existence-precedes-essence", group: "Existence and meaning", concept: "Existence precedes essence",
+  art: { title: "The Awakening Slave", artist: "Michelangelo", year: "c. 1520–23", kind: "suggested", q: "Michelangelo Awakening Slave Accademia" },
+  thinker: "Jean-Paul Sartre", dates: "1905–1980 · French philosopher, novelist and playwright",
+  idea: "There is no blueprint for you. You become what you do.",
+  body: [
+    "A paper-knife, Sartre said, is made according to a plan: its purpose comes before it exists. Humans are the reverse. There is no God with a design for us, no fixed human nature. We exist first, turning up in the world, and only afterward define ourselves by what we do.",
+    "That is freedom, and it is heavy. We are condemned to be free: every choice is ours, and every excuse, “that's just who I am”, is a lie. Sartre gave this as a public lecture in Paris in October 1945, and the hall was so crowded that people fainted."
+  ],
+  writer: "Robert Frost", work: "“The Road Not Taken”", year: "1916", quote: null,
+  pairing: ["A traveller chooses between two roads that are, he admits, worn about the same. He imagines telling the story years later as if the choice had made all the difference. Frost suggests we make ourselves partly by how we tell our choices afterward."],
+  prompt: "What choice did you make that now feels like part of who you are?",
+  placeholder: "A move, a job, a yes, a no…",
+  objection: { who: "Maurice Merleau-Ponty", what: "FREEDOM IS ALWAYS SOMEWHERE", text: "Merleau-Ponty thought Sartre's freedom was too absolute. We choose from inside a body, a history, a class and a language that we did not choose and cannot simply walk out of. Freedom is real, but it is always situated." },
+  next: [["1 hour", "Sartre, Existentialism Is a Humanism", "The 1945 lecture."], ["10 min", "Robert Frost, “The Road Not Taken”", "Read it slowly; it's subtler than its fame."], ["A weekend", "Sartre, Nausea", "The novel of existence without excuses."]],
+  related: ["flourishing", "bad-faith"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.44, pattern: 1 }
+},
+{
+  id: "bad-faith", group: "Existence and meaning", concept: "Bad faith",
+  art: { title: "A Bar at the Folies-Bergère", artist: "Édouard Manet", year: "1882", kind: "suggested", q: "Manet A Bar at the Folies-Bergere Courtauld" },
+  thinker: "Jean-Paul Sartre", dates: "1905–1980 · French philosopher, novelist and playwright",
+  idea: "Telling yourself you have no choice is a choice.",
+  body: [
+    "Sartre watched a café waiter whose movements were a little too precise, a little too eager: he was playing at being a waiter. He pretends to be a thing, a role, so that he doesn't have to face the fact that he could walk out at any moment.",
+    "That is bad faith: lying to yourself about your own freedom. We do it constantly, “I had to”, “that's just how I am”, “it's the system”. Circumstances do constrain us; but we use them to escape the anxiety of choosing. Good faith means owning that, in the end, you are the one deciding."
+  ],
+  writer: "Kazuo Ishiguro", work: "The Remains of the Day", year: "1989", quote: null,
+  pairing: ["Stevens, an English butler, served a lord who sympathised with the Nazis and let the woman he loved walk away, all in the name of professional duty. On a road trip late in life he keeps explaining his choices as something other than choices, until the explanations begin to crack."],
+  prompt: "When did you last tell yourself “I had no choice”? Was that true?",
+  placeholder: "A job, an argument, a yes you regret…",
+  objection: { who: "Sigmund Freud", what: "SOME OF IT REALLY IS HIDDEN", text: "Freud would say Sartre underestimates how much is genuinely unconscious. Some self-deception isn't a choice we're dodging but a defence we can't see, and only patient work brings it into view." },
+  next: [["30 min", "Sartre, Being and Nothingness, “Bad Faith”", "The waiter passage."], ["2 hours", "The Remains of the Day (1993 film)", "Anthony Hopkins as Stevens."], ["A weekend", "Kazuo Ishiguro, The Remains of the Day", "Bad faith, told from inside."]],
+  related: ["thrownness", "the-unconscious"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "the-absurd", group: "Existence and meaning", concept: "The absurd",
+  art: { title: "Sisyphus", artist: "Titian", year: "1548–49", kind: "traditional", file: "sisyphus.jpg", place: "Museo del Prado" },
+  thinker: "Albert Camus", dates: "1913–1960 · French-Algerian writer and philosopher",
+  idea: "We ask the world what it means. The world, unmoved, keeps its silence.",
+  body: [
+    "For Camus, the absurd lives neither in us nor in the world, but in the place where the two meet: a mind that cannot stop asking for reasons, facing a universe that gives none. He called it a <em>divorce</em> between our longing for clarity and the world's indifferent quiet. It is not a riddle waiting for its answer. It is simply what it means to be awake.",
+    "He refused the two old ways out: the leap into a hope that lies beyond this life, and the surrender that ends it. What remains is <strong>revolt</strong>, which means living with open eyes, asking for no rescue, and finding in the struggle itself a kind of fullness. So he leaves Sisyphus at the foot of the hill, turning back once more toward his stone. We must, Camus writes, imagine him happy."
+  ],
+  writer: "Ernest Hemingway", work: "The Sun Also Rises", year: "1926",
+  pairingLead: "Lying awake one night, Jake Barnes admits that the great question, what any of it means, has stopped mattering to him. He has given up waiting for the world to explain itself. Then comes the turn:",
+  quote: "All I wanted to know was how to live in it.",
+  pairing: ["Perhaps, he thinks, meaning is not found before the living but learned through it, if it comes at all."],
+  revolt: [
+    "Asking what it all means hands the world a question it will never answer, and makes your life wait on that answer. Jake takes the question back. He stops demanding an explanation, but he does not stop wanting to live well.",
+    "That is Camus's revolt: not despair, and not false hope, but attention turned from the silent world to your own conduct, how to eat, love, work and endure. Meaning stops being something you are owed and becomes something you make, one day at a time, with your eyes open."
+  ],
+  prompt: "What have you stopped asking ‘why’ about, and simply learned how to live with?",
+  placeholder: "A loss, a job, a body, a city, a person…",
+  deep: true,
+  objection: null,
+  next: null,
+  related: ["leap-of-faith", "amor-fati"],
+  sound: { preset: "absurd" }
+},
+{
+  id: "leap-of-faith", group: "Existence and meaning", concept: "Leap of faith",
+  art: { title: "The Scream", artist: "Edvard Munch", year: "1893", kind: "traditional", q: "Munch The Scream 1893 National Museum Norway" },
+  thinker: "Søren Kierkegaard", dates: "1813–1855 · Danish philosopher and theologian",
+  idea: "Some commitments can't be reasoned into. You have to leap.",
+  body: [
+    "Søren Kierkegaard wrote under a dozen pseudonyms in Copenhagen, attacked the comfortable Christianity of his city, and broke off his engagement to the woman he loved for reasons he never fully explained. His subject was the single individual, standing before choices no system could make for him.",
+    "In Fear and Trembling he returns again and again to Abraham, told to sacrifice his son. Reason cannot justify it; it can only be done in faith, against understanding. Faith, for Kierkegaard, is not the conclusion of an argument but a leap into commitment, made in anxiety, which he called the dizziness of freedom."
+  ],
+  writer: "Fyodor Dostoevsky", work: "The Brothers Karamazov", year: "1880", quote: null,
+  pairing: ["Ivan, the brilliant brother, builds an argument against God that no one in the novel refutes. Alyosha, the youngest, does not refute it either. He answers with a life: love, service, and a commitment that does not wait for the argument to be won."],
+  prompt: "What did you commit to before you could fully justify it?",
+  placeholder: "A move, a relationship, a career, a belief…",
+  objection: { who: "Albert Camus", what: "PHILOSOPHICAL SUICIDE", text: "Camus argued that the leap abandons clear sight: faced with a world that gives no answer, it invents one. The honest response is to stay with the question, eyes open, without appeal." },
+  next: [["30 min", "Kierkegaard, Fear and Trembling, the opening", "Four retellings of Abraham's journey."], ["1 hour", "Dostoevsky, The Brothers Karamazov, “The Grand Inquisitor”", "Ivan's great challenge."], ["A few weeks", "Clare Carlisle, Philosopher of the Heart", "A biography of Kierkegaard."]],
+  related: ["the-absurd", "restless-heart"],
+  sound: { root: 130.81, mode: "harmonic", beat: 0.54, pattern: 1 }
+},
+{
+  id: "amor-fati", group: "Existence and meaning", concept: "Amor fati",
+  art: { title: "Self-Portrait at the Age of 63", artist: "Rembrandt", year: "1669", kind: "suggested", q: "Rembrandt Self-Portrait at the Age of 63 National Gallery" },
+  thinker: "Friedrich Nietzsche", dates: "1844–1900 · German philosopher",
+  idea: "Don't just bear what happens. Love it.",
+  body: [
+    "Nietzsche spent most of his adult life ill: migraines, failing eyes, years of wandering between boarding houses in Switzerland and Italy. Out of that life came his formula for greatness: amor fati, love of fate.",
+    "Not just to endure what is necessary, still less to hide from it, but to love it: to want nothing to be different, not forward, not backward, not in all eternity. It is not resignation. It is the hardest kind of yes, said to the whole of your life, including the parts that broke you."
+  ],
+  writer: "James Joyce", work: "Ulysses", year: "1922",
+  quote: "yes I said yes I will Yes",
+  pairing: ["Ulysses ends with Molly Bloom drifting toward sleep, remembering her whole life, its disappointments, betrayals and pleasures, in one long unpunctuated stream that ends in yes. Joyce gives the book's last word to an affirmation of everything, just as it was."],
+  prompt: "What hard thing in your past would you not now undo?",
+  placeholder: "A failure, an illness, a loss, a mistake…",
+  objection: { who: "Arthur Schopenhauer", what: "WISDOM IS DENIAL", text: "Schopenhauer, Nietzsche's early hero, drew the opposite lesson from the same suffering. Life is driven by blind striving, and wisdom lies in quieting the will, not affirming it. To love fate, he might say, is to love your chains." },
+  next: [["20 min", "Nietzsche, Ecce Homo, “Why I Am So Clever”", "Amor fati, in his own voice."], ["1 hour", "Joyce, Ulysses, the final episode", "Molly's yes, from the start."], ["A few weeks", "Sue Prideaux, I Am Dynamite!", "A vivid life of Nietzsche."]],
+  related: ["control", "eternal-recurrence"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "eternal-recurrence", group: "Existence and meaning", concept: "Eternal recurrence",
+  art: { title: "Ouroboros, from the Chrysopoeia of Cleopatra", artist: "Greek alchemical manuscript", year: "copied c. 1000", kind: "traditional", q: "Chrysopoeia of Cleopatra ouroboros" },
+  thinker: "Friedrich Nietzsche", dates: "1844–1900 · German philosopher",
+  idea: "Would you live this exact life again, forever?",
+  body: [
+    "In The Gay Science (1882), Nietzsche imagines a demon creeping up on you on your loneliest night to say that you will live this life again and again, every pain and joy, every thought, in the same order, forever. Would you curse the demon, or call it a god?",
+    "He offers it less as a theory of the universe than as a test. If the thought crushes you, something in how you live is not yet affirmed. If you could welcome it, you have reached what he called the greatest weight: a life you would will again, exactly as it is."
+  ],
+  writer: "Milan Kundera", work: "The Unbearable Lightness of Being", year: "1984", quote: null,
+  pairing: ["Kundera opens the novel with Nietzsche's thought and turns it over. If everything recurs forever, every act carries unbearable weight. If we live only once, nothing we do weighs anything at all, and that lightness may be unbearable too."],
+  prompt: "If you had to relive today forever, what would you change about it?",
+  placeholder: "A conversation, how you spent the morning, a text you didn't send…",
+  objection: { who: "Bernard Williams", what: "ENDLESS LIFE WOULD EMPTY OUT", text: "Williams argued that a life without end would eventually become unbearably boring: the desires that give a life meaning would run out. Mortality, not eternity, is what makes our choices matter." },
+  next: [["10 min", "Nietzsche, The Gay Science, §341", "The demon, in one paragraph."], ["2 hours", "Groundhog Day (1993)", "The thought experiment, played for laughs and then not."], ["A weekend", "Milan Kundera, The Unbearable Lightness of Being", "Weight against lightness."]],
+  related: ["amor-fati", "examined-life"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.42, pattern: 0 }
+},
+{
+  id: "the-will", group: "Existence and meaning", concept: "The will",
+  art: { title: "Wanderer above the Sea of Fog", artist: "Caspar David Friedrich", year: "c. 1818", kind: "suggested", q: "Caspar David Friedrich Wanderer above the Sea of Fog" },
+  thinker: "Arthur Schopenhauer", dates: "1788–1860 · German philosopher",
+  idea: "Wanting never ends. That is why we suffer.",
+  body: [
+    "Arthur Schopenhauer took Kant's line between appearance and reality and gave the hidden side a name: will. Not a conscious decision but a blind, endless striving that drives everything, the growth of plants, the hunger of animals, our desires and ambitions.",
+    "Because the will can never be satisfied, life swings between the pain of wanting and the boredom of having. Relief comes only in brief escapes: in art, above all music, which lets us contemplate without craving, and in compassion, which sees through the illusion that another's suffering is separate from our own. He was among the first Western philosophers to read the Upanishads and Buddhist texts closely, and found them saying the same."
+  ],
+  writer: "Herman Melville", work: "Moby-Dick", year: "1851", quote: null,
+  pairing: ["Ahab lost his leg to the white whale, and now drives his ship and crew across the world's oceans to kill it. Nothing else matters to him; nothing short of the whale would satisfy him. Melville shows a will that consumes everything around it, including the man himself."],
+  prompt: "What do you keep chasing even though getting it never quite satisfies?",
+  placeholder: "Likes, a number, approval, the next thing…",
+  objection: { who: "Friedrich Nietzsche", what: "SAY YES TO THE WILL", text: "Nietzsche began as Schopenhauer's disciple and broke with him. If life is will, the answer is not to deny it but to affirm it, and turn striving into creation. Pessimism, he concluded, is a symptom of a tired life, not a truth about all life." },
+  next: [["30 min", "Schopenhauer, “On the Suffering of the World”", "From his late essays."], ["1 hour", "Moby-Dick, “The Quarter-Deck”", "Ahab's will laid bare."], ["A few weeks", "Bryan Magee, The Philosophy of Schopenhauer", "The clearest guide."]],
+  related: ["tranquillity", "restless-heart"],
+  sound: { root: 110.0, mode: "aeolian", beat: 0.4, pattern: 1 }
+}
+);
+
+window.CARDS.push(
+{
+  id: "social-contract", group: "Society and power", concept: "Social contract",
+  art: { title: "Frontispiece of Leviathan", artist: "Abraham Bosse", year: "1651", kind: "traditional", q: "Leviathan frontispiece Abraham Bosse 1651" },
+  thinker: "Thomas Hobbes", dates: "1588–1679 · English philosopher · later Locke and Rousseau",
+  idea: "We give up some freedom so we can stop fearing each other.",
+  body: [
+    "Thomas Hobbes lived through the English Civil War, much of it in exile in Paris. In Leviathan (1651) he asked what life would be like with no government at all. His answer: a war of every person against every person, in which life is “solitary, poor, nasty, brutish, and short”.",
+    "To escape it, people agree to hand their power to a sovereign who keeps the peace. That agreement, the social contract, is where political authority comes from. Locke later argued that we keep natural rights no ruler may take; Rousseau, that the contract must express the will of the people themselves. The question underneath stays the same: why should I obey?"
+  ],
+  writer: "William Golding", work: "Lord of the Flies", year: "1954", quote: null,
+  pairing: ["A planeload of schoolboys is stranded on an island with no adults. They elect a leader, make rules and keep a signal fire burning. Then fear of a “beast” grows, the rules give way, and the boys begin to hunt one another."],
+  prompt: "Where have you seen order break down once the rules stopped being enforced?",
+  placeholder: "A share house, a team, a group chat, a workplace…",
+  objection: { who: "David Hume", what: "NO ONE EVER SIGNED", text: "Hume pointed out that almost no government began with a contract; most began in conquest. And staying in a country is hardly consent when, for most people, leaving is impossible." },
+  next: [["20 min", "Hobbes, Leviathan, chapter 13", "The state of nature."], ["2 hours", "William Golding, Lord of the Flies", "The experiment, run on an island."], ["1 hour", "Locke, Second Treatise of Government, chapter 2", "A gentler state of nature."]],
+  related: ["veil-of-ignorance", "general-will"],
+  sound: { root: 123.47, mode: "aeolian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "general-will", group: "Society and power", concept: "The general will",
+  art: { title: "The Tennis Court Oath", artist: "Jacques-Louis David", year: "after 1791", place: "Musée Carnavalet", kind: "suggested", q: "David The Tennis Court Oath 1791" },
+  thinker: "Jean-Jacques Rousseau", dates: "1712–1778 · Genevan philosopher and writer",
+  idea: "Freedom is obeying a law you gave yourselves, together.",
+  body: [
+    "Rousseau opens The Social Contract (1762) with a provocation: man is born free, and everywhere he is in chains. Society had made people dependent, vain and unequal. Yet he did not want a return to nature; he wanted a society that would make people free.",
+    "His answer was the general will: not the sum of what everyone happens to want, but what the community wills for the common good. Obeying it means obeying yourself, as a citizen. The idea inspired democrats and revolutionaries, and it has always worried liberals, because Rousseau wrote that anyone who refuses it may be “forced to be free”."
+  ],
+  writer: "Shirley Jackson", work: "“The Lottery”", year: "1948", quote: null,
+  pairing: ["On a bright June morning, a small town gathers for its annual lottery. Everyone draws a slip of paper. Only at the end do we learn what the winner receives, and that no one, not even the winner's own family, steps outside the ritual to stop it."],
+  prompt: "When did you go along with what a group wanted, against what you wanted?",
+  placeholder: "A vote, a plan, a tradition, a dinner…",
+  objection: { who: "Isaiah Berlin", what: "THE DANGER OF ‘TRUE’ FREEDOM", text: "Berlin warned that once freedom means obeying your real or rational self, someone else can claim to know that self better than you, and coerce you in its name. The twentieth century's tyrannies, he argued, did exactly that." },
+  next: [["30 min", "Rousseau, The Social Contract, Book I", "The contract and the general will."], ["30 min", "Shirley Jackson, “The Lottery”", "Read it without spoilers if you can."], ["1 hour", "Isaiah Berlin, “Two Concepts of Liberty”", "The great essay on freedom from and freedom to."]],
+  related: ["social-contract", "greatest-happiness"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.48, pattern: 1 }
+},
+{
+  id: "virtu", group: "Society and power", concept: "Virtù",
+  art: { title: "Portrait of Cosimo I de' Medici in Armour", artist: "Agnolo Bronzino", year: "c. 1545", kind: "suggested", q: "Bronzino Cosimo I de Medici in Armour" },
+  thinker: "Niccolò Machiavelli", dates: "1469–1527 · Florentine diplomat and political thinker",
+  idea: "Look at power as it is, not as it should be.",
+  body: [
+    "Machiavelli served the Florentine republic as a diplomat until the Medici returned to power, had him imprisoned and tortured, and sent him off to his farm. There, in 1513, he wrote The Prince, hoping to win back favour.",
+    "Its scandal was its honesty. A ruler who tries to be good in everything will be ruined among so many who are not; he must learn, when necessary, not to be good. If he cannot be both, it is safer to be feared than loved. Virtù, for Machiavelli, is not virtue but the skill and nerve to shape events before fortune shapes you."
+  ],
+  writer: "William Shakespeare", work: "Julius Caesar", year: "1599",
+  quote: "Friends, Romans, countrymen, lend me your ears",
+  pairing: ["Brutus kills Caesar for the republic and explains himself to the crowd with honest reasoning. Mark Antony follows with a speech of feigned modesty and perfect timing, and turns the crowd against him in minutes. Principle loses to skill."],
+  prompt: "Where have you seen someone win not because they were right, but because they were skilful?",
+  placeholder: "A meeting, a negotiation, an election…",
+  objection: { who: "Jean-Jacques Rousseau", what: "THE PRINCE IS A WARNING", text: "Rousseau read The Prince as a disguised lesson for the people: by showing exactly how princes rule, Machiavelli was exposing tyranny, not teaching it. His longer Discourses on Livy, after all, praise republics." },
+  next: [["1 hour", "Machiavelli, The Prince, chapters 15–18", "Feared or loved, and the lion and the fox."], ["2 hours", "Shakespeare, Julius Caesar, Act 3", "The two speeches."], ["A few weeks", "Erica Benner, Be Like the Fox", "Machiavelli as a republican."]],
+  related: ["power-knowledge", "categorical-imperative"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.46, pattern: 0 }
+},
+{
+  id: "dialectic", group: "Society and power", concept: "Dialectic",
+  art: { title: "Liberty Leading the People", artist: "Eugène Delacroix", year: "1830", kind: "suggested", q: "Delacroix Liberty Leading the People 1830" },
+  thinker: "G. W. F. Hegel", dates: "1770–1831 · German philosopher",
+  idea: "An idea meets its opposite, and something new is born from the clash.",
+  body: [
+    "Hegel saw history not as a list of events but as a story with a direction: the slow realisation of freedom. In 1806, finishing his first great book in Jena, he watched Napoleon ride through the town and called him the world-soul on horseback.",
+    "Ideas, for Hegel, develop through contradiction. A position is pushed until its limits show; its opposite emerges; and the conflict is resolved at a higher level that keeps what was true in both. His most famous scene is master and slave, each needing the other's recognition, in which the one who labours ends up the freer."
+  ],
+  writer: "Charles Dickens", work: "A Tale of Two Cities", year: "1859",
+  quote: "It was the best of times, it was the worst of times",
+  pairing: ["Aristocrats grind down the poor; the revolution that overthrows them becomes a new terror. Dickens sets the two forces against each other, and lets something else emerge from the wreckage: Sydney Carton's act of self-sacrifice."],
+  prompt: "What disagreement left you with a better idea than either side started with?",
+  placeholder: "At work, with a partner, with yourself…",
+  objection: { who: "Søren Kierkegaard", what: "THE SYSTEM FORGETS THE PERSON", text: "Kierkegaard argued that Hegel's grand system, in which every contradiction is resolved, leaves no place for the single person facing a choice. History may move forward; you still have to decide how to live." },
+  next: [["1 hour", "Peter Singer, Hegel: A Very Short Introduction", "The clearest way in."], ["30 min", "Hegel, Phenomenology of Spirit, “Lordship and Bondage”", "The master and slave."], ["A few weeks", "Charles Dickens, A Tale of Two Cities", "Revolution and its reversal."]],
+  related: ["alienation", "deconstruction"],
+  sound: { root: 146.83, mode: "dorian", beat: 0.46, pattern: 2 }
+},
+{
+  id: "alienation", group: "Society and power", concept: "Alienation",
+  art: { title: "The Stonebreakers", artist: "Gustave Courbet", year: "1849", kind: "suggested", q: "Courbet The Stonebreakers 1849" },
+  thinker: "Karl Marx", dates: "1818–1883 · German philosopher and economist",
+  idea: "Cut off from what you make, you are cut off from yourself.",
+  body: [
+    "Long before Capital, the young Karl Marx filled notebooks in Paris in 1844 with thoughts on what work does to people. Humans, he believed, are makers: we realise ourselves by shaping the world. Under capitalism, workers sell that power. The product belongs to someone else, and so does the process.",
+    "The result is alienation, in four ways: from what you produce, from the activity of producing, from your own nature as a creative being, and from other people, who become competitors or tools. Work becomes something done only in order to live, and life begins only when work ends."
+  ],
+  writer: "John Steinbeck", work: "The Grapes of Wrath", year: "1939", quote: null,
+  pairing: ["Driven off their Oklahoma farm by drought, debt and the banks' tractors, the Joad family travel to California for work. There they find their labour worth less each day as more desperate families arrive. The land they tend will never be theirs."],
+  prompt: "When did your work feel like it had nothing to do with you?",
+  placeholder: "A shift, a project, a job you had…",
+  objection: { who: "Friedrich Hayek", what: "THE ALTERNATIVE IS WORSE", text: "Hayek argued that markets, for all their faults, coordinate the knowledge of millions of people in a way no planner could, and that economies built to end alienation concentrated power and produced more unfreedom, not less." },
+  next: [["1 hour", "Marx, Economic and Philosophic Manuscripts of 1844, “Estranged Labour”", "The four kinds of alienation."], ["A weekend", "John Steinbeck, The Grapes of Wrath", "Labour without land."], ["1 hour", "Herman Melville, “Bartleby, the Scrivener”", "A clerk who would prefer not to."]],
+  related: ["dialectic", "bad-faith"],
+  sound: { root: 123.47, mode: "aeolian", beat: 0.48, pattern: 1 }
+},
+{
+  id: "categorical-imperative", group: "Society and power", concept: "Categorical imperative",
+  art: { title: "The Oath of the Horatii", artist: "Jacques-Louis David", year: "1784", kind: "suggested", q: "David Oath of the Horatii Louvre" },
+  thinker: "Immanuel Kant", dates: "1724–1804 · German philosopher",
+  idea: "Act only in a way you could want everyone to act.",
+  body: [
+    "Kant wanted morality to rest on something firmer than feelings or consequences: on reason itself. A moral command, he argued, cannot depend on what you happen to want. It must bind anyone, unconditionally: categorically.",
+    "His test: act only on a principle you could will to become a universal law. Lying fails it, because if everyone lied whenever convenient, no one would believe anyone and lying would stop working. A second form says: treat humanity, in yourself and in others, always as an end, never merely as a means. People are not tools."
+  ],
+  writer: "Harper Lee", work: "To Kill a Mockingbird", year: "1960", quote: null,
+  pairing: ["Atticus Finch defends a Black man falsely accused of rape in 1930s Alabama, knowing he will lose and that the town will turn on his family. He does it because it is right, and because he could not ask his children to do what he would not."],
+  prompt: "When did you do the right thing knowing it would cost you?",
+  placeholder: "Owning up, speaking up, saying no…",
+  objection: { who: "Benjamin Constant", what: "THE MURDERER AT THE DOOR", text: "Constant pointed out that Kant's rule would forbid lying even to a murderer asking where your friend is hiding. Kant replied that, yes, it would. Most readers since have thought a morality that demands that has gone wrong somewhere." },
+  next: [["1 hour", "Kant, Groundwork of the Metaphysics of Morals, section 2", "Where the formulas appear."], ["A weekend", "Harper Lee, To Kill a Mockingbird", "Principle under pressure."], ["30 min", "Kant, “On a Supposed Right to Lie”", "His reply to Constant."]],
+  related: ["greatest-happiness", "banality-of-evil"],
+  sound: { root: 130.81, mode: "ionian", beat: 0.5, pattern: 0 }
+},
+{
+  id: "banality-of-evil", group: "Society and power", concept: "Banality of evil",
+  art: { title: "The Third of May 1808", artist: "Francisco Goya", year: "1814", kind: "suggested", q: "Goya The Third of May 1808 Prado" },
+  thinker: "Hannah Arendt", dates: "1906–1975 · German-American political thinker",
+  idea: "Great harm can come from people who simply don't think.",
+  body: [
+    "Hannah Arendt fled Nazi Germany in 1933. In 1961 she went to Jerusalem to report for The New Yorker on the trial of Adolf Eichmann, who had organised the deportation of millions to the death camps. She expected to see a monster.",
+    "She saw a careerist who spoke in clichés and seemed unable to think from anyone else's point of view. Evil on that scale, she concluded, did not need demonic depth. It could come from thoughtlessness: following orders, doing the job, never stopping to ask what the job was. Her phrase, the banality of evil, caused fury, and is still argued over."
+  ],
+  writer: "Bernhard Schlink", work: "The Reader", year: "1995", quote: null,
+  pairing: ["Michael, a law student, watches the trial of Hanna, the older woman he loved as a teenager, now accused of crimes as a concentration camp guard. Asked by the judge what he would have done, she seems sincerely unable to see beyond her duties."],
+  prompt: "When did you go along with something without really thinking about it?",
+  placeholder: "A rule at work, a joke, a policy, a habit…",
+  objection: { who: "Bettina Stangneth", what: "EICHMANN WAS NO CLERK", text: "Stangneth's research into Eichmann's own writings shows a committed, proud antisemite, not a thoughtless functionary. Arendt, she argues, was taken in by the performance he gave in court." },
+  next: [["2 hours", "Arendt, Eichmann in Jerusalem, chapters 1–3", "The trial and the man."], ["A weekend", "Bernhard Schlink, The Reader", "Guilt, love and judgement."], ["A few weeks", "Bettina Stangneth, Eichmann Before Jerusalem", "The case against Arendt's reading."]],
+  related: ["categorical-imperative", "examined-life"],
+  sound: { root: 138.59, mode: "phrygian", beat: 0.62, pattern: 2 }
+},
+{
+  id: "power-knowledge", group: "Society and power", concept: "Power/knowledge",
+  art: { title: "Plan of the Panopticon", artist: "Willey Reveley, for Jeremy Bentham", year: "1791", kind: "traditional", q: "Panopticon Willey Reveley 1791" },
+  thinker: "Michel Foucault", dates: "1926–1984 · French philosopher and historian",
+  idea: "Whoever defines what's normal holds power.",
+  body: [
+    "Michel Foucault wrote histories of things we assume have always existed: madness, the clinic, the prison, sexuality. Each time he found that what counts as normal, sane, healthy, lawful, had been shaped by institutions and experts at particular moments, for particular purposes.",
+    "In Discipline and Punish (1975) he described Bentham's Panopticon, a prison in which one guard in a central tower can see every cell without being seen. Never knowing when they are watched, the prisoners learn to watch themselves. Modern power, Foucault argued, works mostly this way: not through force, but through knowledge, measurement and habits we absorb until we police ourselves."
+  ],
+  writer: "George Orwell", work: "Nineteen Eighty-Four", year: "1949",
+  quote: "Who controls the past controls the future",
+  pairing: ["Winston Smith's job is rewriting old newspapers so that the past always agrees with the Party. Telescreens watch every room. The Party's final aim is not obedience but belief: that Winston will truly see two and two make five, if the Party says so."],
+  prompt: "What ‘normal’ did you only recently notice someone decided?",
+  placeholder: "Working hours, beauty, success, what counts as polite…",
+  objection: { who: "Jürgen Habermas", what: "IF EVERYTHING IS POWER, WHY RESIST?", text: "Habermas argued that if all knowledge is just power, Foucault has no ground to criticise anything, since his own histories would be power too. Critique needs some standard of truth or justice to appeal to." },
+  next: [["1 hour", "Foucault, Discipline and Punish, “Panopticism”", "The tower and the cells."], ["A weekend", "George Orwell, Nineteen Eighty-Four", "Power over the past."], ["1 hour", "Gary Gutting, Foucault: A Very Short Introduction", "A clear guide."]],
+  related: ["the-other", "idols-of-the-mind"],
+  sound: { root: 130.81, mode: "phrygian", beat: 0.52, pattern: 1 }
+},
+{
+  id: "veil-of-ignorance", group: "Society and power", concept: "Veil of ignorance",
+  art: { title: "Justice Fountain, Bern", artist: "Hans Gieng", year: "1543", kind: "traditional", q: "Gerechtigkeitsbrunnen Bern Justitia" },
+  thinker: "John Rawls", dates: "1921–2002 · American political philosopher",
+  idea: "Design a fair world without knowing where you'll land in it.",
+  body: [
+    "John Rawls asked how a society could agree on justice when its members want such different things. In A Theory of Justice (1971) he proposed a thought experiment: imagine choosing the basic rules of society from an “original position”, behind a veil of ignorance.",
+    "You don't know whether you'll be rich or poor, talented or not, or which race, sex or religion you'll have. Choosing from there, he argued, you would guarantee basic liberties for everyone, and accept only those inequalities that make the worst-off better off. Fairness is what you'd choose if you couldn't rig the rules in your own favour."
+  ],
+  writer: "Mark Twain", work: "The Prince and the Pauper", year: "1881", quote: null,
+  pairing: ["Edward, heir to the English throne, and Tom Canty, a beggar boy, swap clothes and places by accident. The prince learns from the bottom what the laws he will enforce actually feel like, and returns to the throne determined to rule more mercifully."],
+  prompt: "What rule would you change if you didn't know which side of it you'd be on?",
+  placeholder: "Rent, tax, work, school, the law…",
+  objection: { who: "Robert Nozick", what: "JUSTICE IS ABOUT HOW YOU GOT IT", text: "Nozick argued that a distribution is just if it came from fair acquisition and free exchange. If a million people happily pay to watch one great basketball player, his wealth is just, whatever pattern of equality it upsets." },
+  next: [["1 hour", "Rawls, A Theory of Justice, chapter 1", "The original position."], ["2 hours", "Mark Twain, The Prince and the Pauper", "The veil, lifted by accident."], ["1 hour", "Nozick, Anarchy, State, and Utopia, chapter 7", "The Wilt Chamberlain argument."]],
+  related: ["social-contract", "greatest-happiness"],
+  sound: { root: 146.83, mode: "ionian", beat: 0.52, pattern: 2 }
+},
+{
+  id: "deconstruction", group: "Society and power", concept: "Deconstruction",
+  art: { title: "Rabbit and Duck", artist: "Fliegende Blätter", year: "1892", kind: "suggested", q: "Kaninchen und Ente Fliegende Blätter 1892" },
+  thinker: "Jacques Derrida", dates: "1930–2004 · French philosopher, born in Algeria",
+  idea: "Every opposite quietly depends on the thing it leaves out.",
+  body: [
+    "Jacques Derrida spent his career reading the great texts of philosophy very closely, looking for the places where they undo themselves. Western thought, he argued, is built on pairs, speech and writing, presence and absence, nature and culture, in which the first term is treated as original and the second as a lesser copy.",
+    "Read carefully, the hierarchy wobbles. The “lesser” term turns out to be needed to define the first, and meaning is never fully present in any word but always deferred along a chain of differences. Deconstruction is not destruction. It is a way of reading that shows how every structure rests on what it tries to exclude."
+  ],
+  writer: "Vladimir Nabokov", work: "Pale Fire", year: "1962", quote: null,
+  pairing: ["The book is a 999-line poem by the late John Shade, followed by a commentary from his neighbour Charles Kinbote that gradually takes over, rewriting the poem as the story of Kinbote's own exiled kingship. Who is the author, and what does the poem mean? The text refuses to settle it."],
+  prompt: "What word's meaning has shifted for you over time?",
+  placeholder: "Home, success, love, freedom…",
+  objection: { who: "John Searle", what: "MEANING ISN'T THAT SLIPPERY", text: "Searle argued that Derrida mistook interesting edge cases for the ordinary working of language. Most of the time, speakers mean things, listeners understand them, and communication works. Instability at the margins doesn't dissolve meaning at the centre." },
+  next: [["1 hour", "Simon Glendinning, Derrida: A Very Short Introduction", "The best starting point."], ["A weekend", "Vladimir Nabokov, Pale Fire", "A novel that deconstructs itself."], ["2 hours", "Derrida (2002 documentary)", "The man himself, on camera."]],
+  related: ["limits-of-language", "dialectic"],
+  sound: { root: 164.81, mode: "dorian", beat: 0.58, pattern: 2 }
+}
+);
+
+
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const CARDS = window.CARDS;
+  const BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+  const GROUPS = ["Living well", "Knowing", "Reality", "Self and mind", "Existence and meaning", "Society and power"];
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); return true; } catch(e){ return false; } }
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const img = c => c.art.file ? c.art.file : 'images/' + c.id + '.jpg';
+  const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg>';
+  const hint = t => '<div class="hint">' + CHEV + esc(t) + '</div>';
+  const BACK = '<a class="back" href="#" aria-label="All ideas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>';
+
+  /* ---------- Home ---------- */
+  function renderHome(){
+    $('topL').innerHTML = '';
+    $('steps').innerHTML = '';
+    $('top').classList.remove('solid');
+    let h = '<div class="home" id="scroller"><h1>Waiting</h1><p class="sub">One idea at a time, for the minutes in between. Swipe up through a card to go deeper.</p>';
+    h += '<button class="surprise" id="surprise">Show me an idea</button>';
+    GROUPS.forEach(g => {
+      h += '<div class="grp">' + esc(g) + '</div>';
+      CARDS.filter(c => c.group === g).forEach(c => {
+        const linked = store.get('waiting.' + c.id + '.link');
+        h += '<a class="item" href="#' + c.id + '"><span class="thumb" style="background-image:url(\'' + img(c) + '\')"></span><span><div class="t">' + esc(c.concept) + '</div><div class="w">' + esc(c.thinker) + '</div></span>' + (linked ? '<span class="dot">linked</span>' : '') + '</a>';
+      });
+    });
+    h += '<div class="count">' + CARDS.length + ' ideas</div></div>';
+    $('view').innerHTML = h;
+    $('surprise').addEventListener('click', () => {
+      const unseen = CARDS.filter(c => !store.get('waiting.' + c.id + '.link'));
+      const pool = unseen.length ? unseen : CARDS;
+      location.hash = pool[Math.floor(Math.random() * pool.length)].id;
+    });
+    let y = 0; try { y = +sessionStorage.getItem('homeY') || 0; } catch(e){}
+    $('scroller').scrollTop = y;
+    $('scroller').addEventListener('scroll', e => { try { sessionStorage.setItem('homeY', e.target.scrollTop); } catch(err){} }, { passive: true });
+  }
+
+  /* ---------- Card ---------- */
+  function renderCard(c){
+    $('topL').innerHTML = BACK;
+    const linkKey = 'waiting.' + c.id + '.link';
+    const prev = store.get(linkKey);
+    let h = '<main class="feed" id="feed">';
+
+    // 1. Art
+    h += '<section class="screen art" aria-label="' + esc(c.concept) + '">' +
+      '<div class="ph"></div><img class="painting" src="' + img(c) + '" alt="" onerror="this.remove()">' +
+      '<div class="art-text"><div class="kicker">' + esc(c.group) + '</div><h1>' + esc(c.concept) + '</h1>' +
+      '<div class="caption">' + esc(c.art.artist) + ', <em>' + esc(c.art.title) + '</em>, ' + esc(c.art.year) + (c.art.place ? ' · ' + esc(c.art.place) : '') + '</div>' +
+      hint('Swipe up') + '</div></section>';
+
+    // 2. Thinker
+    h += '<section class="screen text"><div class="body"><div class="label">The thinker</div><h2>' + esc(c.thinker) + '</h2><div class="dates">' + esc(c.dates) + '</div>' +
+      '<div class="idea">' + esc(c.idea) + '</div>' + c.body.map(p => '<p>' + p + '</p>').join('') + '</div>' + hint('Where it shows up') + '</section>';
+
+    // 3. Writer
+    h += '<section class="screen text"><div class="body"><div class="label">Where it shows up</div><h3>' + esc(c.writer) + '</h3><div class="work"><em>' + esc(c.work) + '</em>, ' + esc(c.year) + '</div>';
+    if (c.pairingLead) h += '<p>' + esc(c.pairingLead) + '</p>';
+    if (c.quote) h += '<div class="quote">“' + esc(c.quote) + '”</div>';
+    h += c.pairing.map(p => '<p>' + esc(p) + '</p>').join('');
+    if (c.revolt) h += '<div class="revolt"><div class="label">Why this is revolt</div>' + c.revolt.map(p => '<p>' + esc(p) + '</p>').join('') + '</div>';
+    h += '</div>' + hint('Your turn') + '</section>';
+
+    // 4. Your turn
+    h += '<section class="screen text"><div class="body">' +
+      (prev ? '<div class="earlier"><div class="label">Last time you linked this</div><p>“' + esc(prev) + '”</p></div>' : '') +
+      '<div class="label">Your turn</div><div class="prompt">' + esc(c.prompt) + '</div>' +
+      '<div id="form"><textarea id="entry" placeholder="' + esc(c.placeholder) + '" aria-label="Your example"></textarea><div class="err" id="err" role="alert"></div>' +
+      '<div class="row"><button class="primary" id="save">Save my link</button><button class="ghost" id="later">Later</button></div>' +
+      '<a class="skip" href="#">Skip, back to all ideas</a></div>' +
+      '<div class="done" id="done"><div class="ok" id="doneTitle"></div><p id="doneText"></p></div>' +
+      '</div>' + hint('Keep going to go deeper') + '</section>';
+
+    if (c.deep) {
+      h += $('absurd-deep').innerHTML;
+    } else {
+      // 5. Objection
+      h += '<section class="screen text"><div class="body"><div class="label deeper-label">Go deeper · the best objection</div><h2>Who disagrees?</h2><div style="height:16px"></div>' +
+        '<div class="card-sm"><div class="who">' + esc(c.objection.who) + '</div><div class="what">' + esc(c.objection.what) + '</div><p>' + esc(c.objection.text) + '</p></div>' +
+        '<div class="label" style="margin-top:20px">Who\'s closer to right?</div><div class="poll" data-key="side">' +
+        '<button class="opt" data-v="a">' + esc(c.thinker) + '<small>' + esc(c.idea) + '</small></button>' +
+        '<button class="opt" data-v="b">' + esc(c.objection.who) + '<small>' + esc(c.objection.what.charAt(0) + c.objection.what.slice(1).toLowerCase()) + '</small></button>' +
+        '</div><div class="pollnote"></div></div>' + hint('Where to go next') + '</section>';
+      // 6. Where next
+      h += '<section class="screen text"><div class="body"><div class="label deeper-label">Go deeper · where to go next</div><h2>Follow it further</h2><div style="height:10px"></div>' +
+        c.next.map(n => '<div class="next-item"><div class="time">' + esc(n[0]) + '</div><div><div class="ttl">' + esc(n[1]) + '</div><p>' + esc(n[2]) + '</p></div></div>').join('') +
+        '</div>' + hint('Where next') + '</section>';
+    }
+
+    // Last. Next idea
+    const rel = c.related.map(id => BY_ID[id]).filter(Boolean);
+    h += '<section class="screen text bignext"><div class="body"><div class="label">Where next</div><h2>Follow the thread</h2><p style="margin-top:12px">Ideas this one connects to:</p><div class="poll">' +
+      rel.map(r => '<a class="opt" href="#' + r.id + '">' + esc(r.concept) + '<small>' + esc(r.thinker) + ': ' + esc(r.idea) + '</small></a>').join('') +
+      '</div><a class="homelink" href="#">All ideas</a></div></section>';
+
+    h += '</main>';
+    $('view').innerHTML = h;
+    $('feed').scrollTop = 0;
+    wireCard(c, linkKey);
+  }
+
+  function wireCard(c, linkKey){
+    const feed = $('feed');
+    const screens = [...feed.querySelectorAll('.screen')];
+    $('steps').innerHTML = screens.map((_, i) => '<i' + (i === 0 ? ' class="on"' : '') + '></i>').join('');
+    const bars = [...$('steps').children];
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const i = screens.indexOf(e.target);
+          bars.forEach((b, j) => b.classList.toggle('on', j <= i));
+          $('top').classList.toggle('solid', i > 0);
+        }
+      });
+    }, { root: feed, rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+    screens.forEach(s => io.observe(s));
+    $('top').classList.remove('solid');
+
+    const finish = (title, text) => {
+      $('form').style.display = 'none';
+      $('doneTitle').textContent = title; $('doneText').textContent = text;
+      $('done').classList.add('show'); $('entry').blur();
+    };
+    $('entry').addEventListener('input', () => { $('err').textContent = ''; });
+    $('save').addEventListener('click', () => {
+      const v = $('entry').value.trim();
+      if (!v) { $('err').textContent = 'Write something first, or tap Later.'; $('entry').focus(); return; }
+      const kept = store.set(linkKey, v);
+      const rel = c.related.map(id => BY_ID[id]).filter(Boolean).map(r => r.concept);
+      finish('Saved.', kept ? 'This will come back to you here, and when you reach ' + rel.join(' or ') + '.' : 'Saved for this session only: this browser isn’t keeping data.');
+    });
+    $('later').addEventListener('click', () => finish('Saved for later.', 'The prompt will be waiting next time you open this card.'));
+
+    feed.querySelectorAll('.poll[data-key]').forEach(box => {
+      const key = 'waiting.' + c.id + '.' + box.dataset.key, note = box.nextElementSibling;
+      const mark = v => box.querySelectorAll('.opt').forEach(b => b.classList.toggle('picked', b.dataset.v === v));
+      const saved = store.get(key); if (saved) { mark(saved); note.textContent = 'Your answer is saved. You can change your mind.'; }
+      box.addEventListener('click', e => {
+        const b = e.target.closest('.opt'); if (!b) return;
+        mark(b.dataset.v); store.set(key, b.dataset.v); note.textContent = 'Saved. You can change your mind.';
+      });
+    });
+  }
+
+  /* ---------- Routing ---------- */
+  function route(){
+    const id = location.hash.replace('#', '');
+    const c = BY_ID[id];
+    if (c) { renderCard(c); setSound(c); } else { renderHome(); setSound(null); }
+  }
+  window.addEventListener('hashchange', route);
+
+  /* ---------- Sound ---------- */
+  const SCALES = { ionian:[0,2,4,5,7,9,11], dorian:[0,2,3,5,7,9,10], phrygian:[0,1,3,5,7,8,10], lydian:[0,2,4,6,7,9,11], mixolydian:[0,2,4,5,7,9,10], aeolian:[0,2,3,5,7,8,10], harmonic:[0,2,3,5,7,8,11] };
+  const PROGS = { ionian:[0,5,3,4], lydian:[0,1,0,4], mixolydian:[0,6,3,0], aeolian:[0,5,3,6], dorian:[0,3,0,6], phrygian:[0,1,0,6], harmonic:[0,5,3,4] };
+  const PATTERNS = [[0,2,3,4,3,2,1,2],[0,2,4,3,2,3,1,null],[0,null,3,4,2,3,4,2]];
+  const ABSURD = { beat: 0.47, pattern: 0, chords: [
+    { bass: 73.42, arp: [146.83, 220.00, 293.66, 329.63, 349.23], strings: [220.00, 293.66] },
+    { bass: 58.27, arp: [116.54, 174.61, 220.00, 293.66, 349.23], strings: [174.61, 293.66] },
+    { bass: 49.00, arp: [98.00, 146.83, 220.00, 233.08, 293.66], strings: [146.83, 233.08] },
+    { bass: 55.00, arp: [110.00, 164.81, 196.00, 293.66, 329.63], strings: [164.81, 293.66] } ] };
+  const HOME = { root: 130.81, mode: "aeolian", beat: 0.6, pattern: 2 };
+  function profile(s){
+    if (s && s.preset === 'absurd') return ABSURD;
+    s = s || HOME;
+    const sc = SCALES[s.mode] || SCALES.aeolian, prog = PROGS[s.mode] || PROGS.aeolian;
+    const f = n => s.root * Math.pow(2, (sc[((n % 7) + 7) % 7] + 12 * Math.floor(n / 7)) / 12);
+    return { beat: s.beat, pattern: s.pattern, chords: prog.map(d => ({ bass: f(d) / 2, arp: [f(d), f(d+4), f(d+7), f(d+8), f(d+9)], strings: [f(d+2), f(d+7)] })) };
+  }
+  let SOUND = profile(null);
+  let ctx = null, master = null, playing = false, timers = [], step = 0, bus = null, verbBus = null;
+  function impulse(c, secs){
+    const len = c.sampleRate * secs, buf = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++){ const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3); }
+    return buf;
+  }
+  function setup(){
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1900; lp.Q.value = 0.3;
+    const verb = ctx.createConvolver(); verb.buffer = impulse(ctx, 4.5);
+    const wet = ctx.createGain(); wet.gain.value = 0.55;
+    const dry = ctx.createGain(); dry.gain.value = 0.7;
+    bus = ctx.createGain(); verbBus = ctx.createGain();
+    bus.connect(lp); lp.connect(dry); lp.connect(verb); verbBus.connect(verb);
+    verb.connect(wet); dry.connect(master); wet.connect(master); master.connect(ctx.destination);
+    return true;
+  }
+  function piano(freq, when, vel){
+    const decay = 2.2 + 180 / freq;
+    [[1, 1], [2, 0.38], [3, 0.12], [4, 0.05]].forEach(([m, amp], k) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = freq * m * (1 + (Math.random() - 0.5) * 0.0015);
+      const peak = 0.11 * vel * amp;
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(peak, when + 0.006);
+      g.gain.exponentialRampToValueAtTime(peak * 0.35, when + 0.25 / (k + 1));
+      g.gain.exponentialRampToValueAtTime(0.0001, when + decay / (1 + k * 0.6));
+      o.connect(g); g.connect(bus);
+      o.start(when); o.stop(when + decay + 0.1);
+    });
+  }
+  function strings(freq, when, dur){
+    [-6, 5].forEach(det => {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = det;
+      const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 4.6; vg.gain.value = freq * 0.004;
+      vib.connect(vg); vg.connect(o.frequency);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 650; f.Q.value = 0.7;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, when);
+      g.gain.linearRampToValueAtTime(0.018, when + dur * 0.5);
+      g.gain.linearRampToValueAtTime(0, when + dur * 1.05);
+      o.connect(f); f.connect(g); g.connect(verbBus); g.connect(bus);
+      o.start(when); vib.start(when); o.stop(when + dur * 1.1); vib.stop(when + dur * 1.1);
+    });
+  }
+  function playChord(){
+    if (!playing) return;
+    const c = SOUND.chords[step % SOUND.chords.length];
+    const now = ctx.currentTime + 0.1, b = SOUND.beat, barLen = b * 8, total = barLen * 2;
+    piano(c.bass, now, 0.55);
+    if (step % 4 === 3) piano(c.bass * 2, now + barLen, 0.4);
+    c.strings.forEach(f => strings(f, now, total + 1));
+    for (let bar = 0; bar < 2; bar++){
+      const pat = PATTERNS[(step + bar + SOUND.pattern) % PATTERNS.length];
+      pat.forEach((idx, i) => {
+        if (idx === null) return;
+        const t = now + bar * barLen + i * b + (Math.random() - 0.5) * 0.03 + (i === 7 ? 0.08 : 0);
+        piano(c.arp[idx], t, (i === 0 ? 0.7 : 0.45) + Math.random() * 0.15);
+      });
+    }
+    step++;
+    timers.push(setTimeout(playChord, total * 1000));
+  }
+  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+  async function start(){
+    if (!ctx && !setup()) return;
+    if (ctx.state === 'suspended') await ctx.resume();
+    playing = true; renderSound();
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(1, ctx.currentTime, 1.5);
+    playChord();
+  }
+  function stop(){
+    if (!ctx) return;
+    playing = false; renderSound(); clearTimers();
+    master.gain.setTargetAtTime(0, ctx.currentTime, 0.8);
+  }
+  function setSound(card){
+    SOUND = profile(card ? card.sound : null); step = 0;
+    if (playing && ctx) {
+      clearTimers();
+      master.gain.setTargetAtTime(0.15, ctx.currentTime, 0.4);
+      timers.push(setTimeout(() => { if (!playing) return; master.gain.setTargetAtTime(1, ctx.currentTime, 1.5); playChord(); }, 1200));
+    }
+  }
+  function renderSound(){
+    $('sound').classList.toggle('playing', playing);
+    $('sound').setAttribute('aria-pressed', String(playing));
+    $('sound').setAttribute('aria-label', playing ? 'Stop music' : 'Play music');
+  }
+  $('sound').addEventListener('click', e => { e.stopPropagation(); playing ? stop() : start().catch(()=>{}); });
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx || !playing) return;
+    if (document.hidden) { clearTimers(); ctx.suspend(); }
+    else { ctx.resume(); playChord(); }
+  });
+
+  route();
+})();
+
+</script>
+</body>
+</html>
